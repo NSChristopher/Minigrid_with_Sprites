@@ -1,8 +1,21 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
+=======
+from minigrid.core.constants import DIR_TO_VEC
+
+from typing import TYPE_CHECKING, Tuple
+
+import numpy as np
+from PIL import Image
+
+# images
+wall_sprite = Image.open("Minigrid_with_Monsters/figures/sprites/wall_vines5.png").resize((32, 32))
+floor_sprite = Image.open("Minigrid_with_Monsters/figures/sprites/floor_nerves0.png").resize((32, 32))
+>>>>>>> 259d305 (Save)
 
 from minigrid.core.constants import (
     COLOR_TO_IDX,
@@ -13,6 +26,10 @@ from minigrid.core.constants import (
 )
 from minigrid.utils.rendering import (
     fill_coords,
+<<<<<<< HEAD
+=======
+    fill_coords_with_sprite,
+>>>>>>> 259d305 (Save)
     point_in_circle,
     point_in_line,
     point_in_rect,
@@ -96,6 +113,11 @@ class WorldObj:
             v = Goal()
         elif obj_type == "lava":
             v = Lava()
+<<<<<<< HEAD
+=======
+        elif obj_type == "monster":
+            v = Monster()
+>>>>>>> 259d305 (Save)
         else:
             assert False, "unknown object type in decode '%s'" % obj_type
 
@@ -124,14 +146,23 @@ class Floor(WorldObj):
 
     def __init__(self, color: str = "blue"):
         super().__init__("floor", color)
+<<<<<<< HEAD
+=======
+        self.sprite = floor_sprite
+        self.sprite_array = np.array(self.sprite)
+>>>>>>> 259d305 (Save)
 
     def can_overlap(self):
         return True
 
     def render(self, img):
         # Give the floor a pale color
+<<<<<<< HEAD
         color = COLORS[self.color] / 2
         fill_coords(img, point_in_rect(0.031, 1, 0.031, 1), color)
+=======
+        fill_coords_with_sprite(img, point_in_rect(0, 1, 0, 1), self.sprite_array)
+>>>>>>> 259d305 (Save)
 
 
 class Lava(WorldObj):
@@ -160,13 +191,23 @@ class Lava(WorldObj):
 class Wall(WorldObj):
     def __init__(self, color: str = "grey"):
         super().__init__("wall", color)
+<<<<<<< HEAD
+=======
+        self.sprite = wall_sprite
+        self.sprite_array = np.array(self.sprite)
+>>>>>>> 259d305 (Save)
 
     def see_behind(self):
         return False
 
     def render(self, img):
+<<<<<<< HEAD
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
+=======
+        # Give the wall a dark color
+        fill_coords_with_sprite(img, point_in_rect(0, 1, 0, 1), self.sprite_array)
+>>>>>>> 259d305 (Save)
 
 class Door(WorldObj):
     def __init__(self, color: str, is_open: bool = False, is_locked: bool = False):
@@ -291,3 +332,194 @@ class Box(WorldObj):
         # Replace the box by its contents
         env.grid.set(pos[0], pos[1], self.contains)
         return True
+<<<<<<< HEAD
+=======
+
+class Monster(WorldObj):
+    def __init__(self, color="red", direction=0):
+        super().__init__("monster", color)
+        self.direction = direction
+        self.position = None
+        self.path = []
+        self.view_size = 7
+
+    def can_overlap(self):
+        return False
+
+    def render(self, img):
+        # Draw the monster as a red square
+        c = COLORS[self.color]
+        fill_coords(img, point_in_rect(0.3, 0.7, 0.3, 0.7), c)
+
+    def get_view_exts(self):
+        """
+        Get the extents of the square set of tiles visible to the monster
+        """
+        x, y = self.position
+
+        # Facing right
+        if self.direction == 0:
+            topX = x
+            topY = y - self.view_size // 2
+        # Facing down
+        elif self.direction == 1:
+            topX = x - self.view_size // 2
+            topY = y
+        # Facing left
+        elif self.direction == 2:
+            topX = x - self.view_size + 1
+            topY = y - self.view_size // 2
+        # Facing up
+        elif self.direction == 3:
+            topX = x - self.view_size // 2
+            topY = y - self.view_size + 1
+        else:
+            assert False, "Invalid monster direction"
+
+        botX = topX + self.view_size
+        botY = topY + self.view_size
+
+        return topX, topY, botX, botY
+
+    def get_view_coords(self, i, j):
+        """
+        Translate and rotate absolute grid coordinates (i, j) into the
+        monster's partially observable view (sub-grid). Note that the resulting
+        coordinates may be negative or outside of the monster's view size.
+        """
+        mx, my = self.position
+        dx, dy = DIR_TO_VEC[self.direction]
+        rx, ry = -dy, dx  # Right vector perpendicular to the direction vector
+
+        # Compute the absolute coordinates of the top-left view corner
+        sz = self.view_size
+        hs = self.view_size // 2
+        tx = mx + (dx * (sz - 1)) - (rx * hs)
+        ty = my + (dy * (sz - 1)) - (ry * hs)
+
+        lx = i - tx
+        ly = j - ty
+
+        # Project the coordinates of the object relative to the top-left
+        # corner onto the monster's own coordinate system
+        vx = rx * lx + ry * ly
+        vy = -(dx * lx + dy * ly)
+
+        return vx, vy
+
+    def gen_obs_grid(self, grid):
+        """
+        Generate the sub-grid observed by the monster.
+        This method also outputs a visibility mask telling us which grid
+        cells the monster can actually see.
+        """
+        topX, topY, botX, botY = self.get_view_exts()
+
+        # Slice out the monster's field of view
+        grid = grid.slice(topX, topY, self.view_size, self.view_size)
+
+        # Rotate the grid to match the monster's direction
+        for i in range(self.direction + 1):
+            grid = grid.rotate_left()
+
+        # Process occluders and visibility, similar to the agent
+        vis_mask = grid.process_vis(
+            agent_pos=(self.view_size // 2, self.view_size - 1)
+        )
+
+        return grid, vis_mask
+
+    def can_see(self, grid, target_pos):
+        grid, vis_mask = self.gen_obs_grid(grid)
+        tx, ty = target_pos
+
+        # Convert target position to relative coordinates in the monster's view
+        relative_coords = self.relative_coords(tx, ty)
+        if relative_coords is None:
+            return False
+
+        vx, vy = relative_coords
+
+        return vis_mask[vx, vy]
+
+    def relative_coords(self, x, y):
+        """
+        Check if a grid position belongs to the monster's field of view, and returns the corresponding coordinates
+        """
+        vx, vy = self.get_view_coords(x, y)
+
+        if vx < 0 or vy < 0 or vx >= self.view_size or vy >= self.view_size:
+            return None
+
+        return vx, vy
+    
+    def move_towards(self, grid, target_pos):
+        """
+        Move towards the target position from the start position.
+        If a wall or another object is encountered, or the move goes out of bounds, the monster changes direction.
+        """
+        sx, sy = self.position
+        tx, ty = target_pos
+        dx, dy = tx - sx, ty - sy
+
+        # Determine the direction to move
+        if abs(dx) > abs(dy):
+            new_x = sx + (1 if dx > 0 else -1)
+            new_y = sy
+        else:
+            new_x = sx
+            new_y = sy + (1 if dy > 0 else -1)
+
+        # Ensure the new position is within bounds and is empty
+        if not (0 <= new_x < grid.width and 0 <= new_y < grid.height):
+            self.point_random_direction()
+        else:
+            next_cell = grid.get(new_x, new_y)
+            if next_cell is None:
+                # Clear current position
+                grid.set(sx, sy, None)
+                # Move to the new position
+                self.position = (new_x, new_y)
+                grid.set(new_x, new_y, self)
+            else:
+                self.point_random_direction()
+
+        return self.position
+
+    def patrol_forward(self, grid):
+        """
+        Move the monster one space in its current direction if the path is clear.
+        If a wall or another object is encountered, or the move goes out of bounds, the monster changes direction.
+        """
+        sx, sy = self.position
+        dx, dy = DIR_TO_VEC[self.direction]
+        new_x = sx + dx
+        new_y = sy + dy
+
+        # Ensure the new position is within bounds and is empty
+        if not (0 <= new_x < grid.width and 0 <= new_y < grid.height):
+            self.point_random_direction()
+        else:
+            next_cell = grid.get(new_x, new_y)
+            if next_cell is None:
+                # Clear current position
+                grid.set(sx, sy, None)
+                # Move to the new position
+                self.position = (new_x, new_y)
+                grid.set(new_x, new_y, self)
+            else:
+                self.point_random_direction()
+
+        # random chance to change direction
+        if np.random.rand() < 0.25:
+            self.point_random_direction()
+
+        return self.position
+
+    
+    def point_random_direction(self):
+        """
+        Choose a random direction for the monster to move in
+        """
+        self.direction = np.random.randint(0, 4)
+>>>>>>> 259d305 (Save)

@@ -313,8 +313,13 @@ class RGBImgObsWrapper(ObservationWrapper):
             low=0,
             high=255,
             shape=(
+<<<<<<< HEAD
                 self.unwrapped.height * tile_size,
                 self.unwrapped.width * tile_size,
+=======
+                self.unwrapped.width * tile_size,
+                self.unwrapped.height * tile_size,
+>>>>>>> 259d305 (Save)
                 3,
             ),
             dtype="uint8",

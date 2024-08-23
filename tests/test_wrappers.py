@@ -389,6 +389,7 @@ def test_no_death_wrapper():
     assert reward_wrap == reward + death_cost
     env.close()
     env_wrap.close()
+<<<<<<< HEAD
 
 
 def test_non_square_RGBIMgObsWrapper():
@@ -399,3 +400,5 @@ def test_non_square_RGBIMgObsWrapper():
     env = RGBImgObsWrapper(gym.make("MiniGrid-BlockedUnlockPickup-v0"))
     obs, info = env.reset()
     assert env.observation_space["image"].shape == obs["image"].shape
+=======
+>>>>>>> 259d305 (Save)

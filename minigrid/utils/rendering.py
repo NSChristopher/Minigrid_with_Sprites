@@ -36,6 +36,31 @@ def fill_coords(img, fn, color):
 
     return img
 
+def fill_coords_with_sprite(img, fn, sprite):
+    """
+    Fill pixels of an image with coordinates matching a filter function using a sprite.
+    The sprite is assumed to be the same size as the grid cells.
+    """
+
+    sprite_h, sprite_w, _ = sprite.shape
+
+    for y in range(img.shape[0]):
+        for x in range(img.shape[1]):
+            yf = (y + 0.5) / img.shape[0]
+            xf = (x + 0.5) / img.shape[1]
+            if fn(xf, yf):
+                # Calculate corresponding sprite coordinates
+                sx = int(xf * sprite_w)
+                sy = int(yf * sprite_h)
+                
+                # Blend the sprite's pixel with the background if there's transparency
+                sprite_pixel = sprite[sy, sx]
+                alpha = sprite_pixel[3] / 255.0 if sprite.shape[2] == 4 else 1.0
+                img[y, x] = (1 - alpha) * img[y, x] + alpha * sprite_pixel[:3]
+
+    return img
+
+
 
 def rotate_fn(fin, cx, cy, theta):
     def fout(x, y):
