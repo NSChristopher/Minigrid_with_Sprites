@@ -1,21 +1,9 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from typing import TYPE_CHECKING, Tuple
 
 import numpy as np
-=======
-from minigrid.core.constants import DIR_TO_VEC
 
-from typing import TYPE_CHECKING, Tuple
-
-import numpy as np
-from PIL import Image
-
-# images
-wall_sprite = Image.open("Minigrid_with_Monsters/figures/sprites/wall_vines5.png").resize((32, 32))
-floor_sprite = Image.open("Minigrid_with_Monsters/figures/sprites/floor_nerves0.png").resize((32, 32))
->>>>>>> 259d305 (Save)
 
 from minigrid.core.constants import (
     COLOR_TO_IDX,
@@ -26,10 +14,6 @@ from minigrid.core.constants import (
 )
 from minigrid.utils.rendering import (
     fill_coords,
-<<<<<<< HEAD
-=======
-    fill_coords_with_sprite,
->>>>>>> 259d305 (Save)
     point_in_circle,
     point_in_line,
     point_in_rect,
@@ -113,11 +97,8 @@ class WorldObj:
             v = Goal()
         elif obj_type == "lava":
             v = Lava()
-<<<<<<< HEAD
-=======
         elif obj_type == "monster":
             v = Monster()
->>>>>>> 259d305 (Save)
         else:
             assert False, "unknown object type in decode '%s'" % obj_type
 
@@ -146,23 +127,15 @@ class Floor(WorldObj):
 
     def __init__(self, color: str = "blue"):
         super().__init__("floor", color)
-<<<<<<< HEAD
-=======
-        self.sprite = floor_sprite
-        self.sprite_array = np.array(self.sprite)
->>>>>>> 259d305 (Save)
 
     def can_overlap(self):
         return True
 
     def render(self, img):
         # Give the floor a pale color
-<<<<<<< HEAD
         color = COLORS[self.color] / 2
         fill_coords(img, point_in_rect(0.031, 1, 0.031, 1), color)
-=======
-        fill_coords_with_sprite(img, point_in_rect(0, 1, 0, 1), self.sprite_array)
->>>>>>> 259d305 (Save)
+
 
 
 class Lava(WorldObj):
@@ -191,23 +164,14 @@ class Lava(WorldObj):
 class Wall(WorldObj):
     def __init__(self, color: str = "grey"):
         super().__init__("wall", color)
-<<<<<<< HEAD
-=======
-        self.sprite = wall_sprite
-        self.sprite_array = np.array(self.sprite)
->>>>>>> 259d305 (Save)
 
     def see_behind(self):
         return False
 
     def render(self, img):
-<<<<<<< HEAD
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
-=======
-        # Give the wall a dark color
-        fill_coords_with_sprite(img, point_in_rect(0, 1, 0, 1), self.sprite_array)
->>>>>>> 259d305 (Save)
+
 
 class Door(WorldObj):
     def __init__(self, color: str, is_open: bool = False, is_locked: bool = False):
@@ -332,8 +296,7 @@ class Box(WorldObj):
         # Replace the box by its contents
         env.grid.set(pos[0], pos[1], self.contains)
         return True
-<<<<<<< HEAD
-=======
+
 
 class Monster(WorldObj):
     def __init__(self, color="red", direction=0):
@@ -522,4 +485,4 @@ class Monster(WorldObj):
         Choose a random direction for the monster to move in
         """
         self.direction = np.random.randint(0, 4)
->>>>>>> 259d305 (Save)
+

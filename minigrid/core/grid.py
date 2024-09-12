@@ -289,12 +289,10 @@ class Grid:
         return grid, vis_mask
 
     def process_vis(self, agent_pos: tuple[int, int]) -> np.ndarray:
-<<<<<<< HEAD
-=======
+
         """
         Compute the visibility mask of the grid
         """
->>>>>>> 259d305 (Save)
         mask = np.zeros(shape=(self.width, self.height), dtype=bool)
 
         mask[agent_pos[0], agent_pos[1]] = True
