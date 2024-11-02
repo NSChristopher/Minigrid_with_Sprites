@@ -1,9 +1,28 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple
+from typing import Any
 
 import numpy as np
 
+from minigrid.core.constants import DIR_TO_VEC
+
+from minigrid.renderers.obj_renderer import (
+    ObjRenderer,
+    GoalRenderer,
+    FloorRenderer,
+    LavaRenderer,
+    WallRenderer,
+    DoorRenderer,
+    KeyRenderer,
+    BallRenderer,
+    BoxRenderer,
+)
+
+# override the WallRenderer class with the PrettyWallRenderer class
+from minigrid.renderers.pretty_obj_renderers import PrettyWallRenderer as WallRenderer
+
+
+from typing import TYPE_CHECKING, Tuple
 
 from minigrid.core.constants import (
     COLOR_TO_IDX,
@@ -42,6 +61,9 @@ class WorldObj:
 
         # Current position of the object
         self.cur_pos: Point | None = None
+
+        # object renderer
+        self.renderer: ObjRenderer
 
     def can_overlap(self) -> bool:
         """Can the agent overlap with this?"""
@@ -104,20 +126,18 @@ class WorldObj:
 
         return v
 
-    def render(self, r: np.ndarray) -> np.ndarray:
+    def render(self, img: np.ndarray):
         """Draw this object with the given renderer"""
-        raise NotImplementedError
+        self.renderer.render(img)
 
 
 class Goal(WorldObj):
     def __init__(self):
         super().__init__("goal", "green")
+        self.renderer = GoalRenderer(obj = self)
 
     def can_overlap(self):
         return True
-
-    def render(self, img):
-        fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
 
 class Floor(WorldObj):
@@ -127,55 +147,33 @@ class Floor(WorldObj):
 
     def __init__(self, color: str = "blue"):
         super().__init__("floor", color)
+        self.renderer = FloorRenderer(obj = self)
 
     def can_overlap(self):
         return True
-
-    def render(self, img):
-        # Give the floor a pale color
-        color = COLORS[self.color] / 2
-        fill_coords(img, point_in_rect(0.031, 1, 0.031, 1), color)
-
 
 
 class Lava(WorldObj):
     def __init__(self):
-        super().__init__("lava", "red")
+        super().__init__("lava", "orange")
+        self.renderer = LavaRenderer(obj = self)
 
     def can_overlap(self):
         return True
-
-    def render(self, img):
-        c = (255, 128, 0)
-
-        # Background color
-        fill_coords(img, point_in_rect(0, 1, 0, 1), c)
-
-        # Little waves
-        for i in range(3):
-            ylo = 0.3 + 0.2 * i
-            yhi = 0.4 + 0.2 * i
-            fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03), (0, 0, 0))
-            fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03), (0, 0, 0))
 
 
 class Wall(WorldObj):
     def __init__(self, color: str = "grey"):
         super().__init__("wall", color)
+        self.renderer = WallRenderer(obj = self)
 
     def see_behind(self):
         return False
 
-    def render(self, img):
-        fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
-
-
-
 class Door(WorldObj):
     def __init__(self, color: str, is_open: bool = False, is_locked: bool = False):
         super().__init__("door", color)
+        self.renderer = DoorRenderer(obj = self)
         self.is_open = is_open
         self.is_locked = is_locked
 
@@ -216,91 +214,43 @@ class Door(WorldObj):
 
         return (OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], state)
 
-    def render(self, img):
-        c = COLORS[self.color]
-
-        if self.is_open:
-            fill_coords(img, point_in_rect(0.88, 1.00, 0.00, 1.00), c)
-            fill_coords(img, point_in_rect(0.92, 0.96, 0.04, 0.96), (0, 0, 0))
-            return
-
-        # Door frame and door
-        if self.is_locked:
-            fill_coords(img, point_in_rect(0.00, 1.00, 0.00, 1.00), c)
-            fill_coords(img, point_in_rect(0.06, 0.94, 0.06, 0.94), 0.45 * np.array(c))
-
-            # Draw key slot
-            fill_coords(img, point_in_rect(0.52, 0.75, 0.50, 0.56), c)
-        else:
-            fill_coords(img, point_in_rect(0.00, 1.00, 0.00, 1.00), c)
-            fill_coords(img, point_in_rect(0.04, 0.96, 0.04, 0.96), (0, 0, 0))
-            fill_coords(img, point_in_rect(0.08, 0.92, 0.08, 0.92), c)
-            fill_coords(img, point_in_rect(0.12, 0.88, 0.12, 0.88), (0, 0, 0))
-
-            # Draw door handle
-            fill_coords(img, point_in_circle(cx=0.75, cy=0.50, r=0.08), c)
-
 
 class Key(WorldObj):
     def __init__(self, color: str = "blue"):
         super().__init__("key", color)
+        self.renderer = KeyRenderer(obj = self)
 
     def can_pickup(self):
         return True
-
-    def render(self, img):
-        c = COLORS[self.color]
-
-        # Vertical quad
-        fill_coords(img, point_in_rect(0.50, 0.63, 0.31, 0.88), c)
-
-        # Teeth
-        fill_coords(img, point_in_rect(0.38, 0.50, 0.59, 0.66), c)
-        fill_coords(img, point_in_rect(0.38, 0.50, 0.81, 0.88), c)
-
-        # Ring
-        fill_coords(img, point_in_circle(cx=0.56, cy=0.28, r=0.190), c)
-        fill_coords(img, point_in_circle(cx=0.56, cy=0.28, r=0.064), (0, 0, 0))
 
 
 class Ball(WorldObj):
     def __init__(self, color="blue"):
         super().__init__("ball", color)
+        self.renderer = BallRenderer(obj = self)
 
     def can_pickup(self):
         return True
-
-    def render(self, img):
-        fill_coords(img, point_in_circle(0.5, 0.5, 0.31), COLORS[self.color])
 
 
 class Box(WorldObj):
     def __init__(self, color, contains: WorldObj | None = None):
         super().__init__("box", color)
+        self.renderer = BoxRenderer(obj = self)
         self.contains = contains
 
     def can_pickup(self):
         return True
-
-    def render(self, img):
-        c = COLORS[self.color]
-
-        # Outline
-        fill_coords(img, point_in_rect(0.12, 0.88, 0.12, 0.88), c)
-        fill_coords(img, point_in_rect(0.18, 0.82, 0.18, 0.82), (0, 0, 0))
-
-        # Horizontal slit
-        fill_coords(img, point_in_rect(0.16, 0.84, 0.47, 0.53), c)
 
     def toggle(self, env, pos):
         # Replace the box by its contents
         env.grid.set(pos[0], pos[1], self.contains)
         return True
 
-
 class Monster(WorldObj):
     def __init__(self, color="red", direction=0):
         super().__init__("monster", color)
+        self.renderer = GoalRenderer(obj = self)
         self.direction = direction
         self.position = None
         self.path = []
@@ -308,11 +258,6 @@ class Monster(WorldObj):
 
     def can_overlap(self):
         return False
-
-    def render(self, img):
-        # Draw the monster as a red square
-        c = COLORS[self.color]
-        fill_coords(img, point_in_rect(0.3, 0.7, 0.3, 0.7), c)
 
     def get_view_exts(self):
         """
@@ -485,4 +430,3 @@ class Monster(WorldObj):
         Choose a random direction for the monster to move in
         """
         self.direction = np.random.randint(0, 4)
-

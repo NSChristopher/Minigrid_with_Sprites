@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-
+import cv2
 import numpy as np
 
 
@@ -130,3 +130,27 @@ def highlight_img(img, color=(255, 255, 255), alpha=0.30):
     blend_img = img + alpha * (np.array(color, dtype=np.uint8) - img)
     blend_img = blend_img.clip(0, 255).astype(np.uint8)
     img[:, :, :] = blend_img
+
+def overlay_img(img, overlay):
+    """
+    Overlay one image on top of another with proper alpha blending.
+    """
+    # Resize the overlay to match the input image dimensions
+    overlay = cv2.resize(overlay, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_LINEAR)
+
+    # Check if the overlay has an alpha channel
+    if overlay.shape[2] == 4:
+        alpha = overlay[:, :, 3] / 255.0  # Extract the alpha channel and normalize to [0, 1]
+    else:
+        alpha = np.ones((overlay.shape[0], overlay.shape[1]))
+
+    # Repeat alpha channel to match the image dimensions (height, width, 3)
+    alpha = np.expand_dims(alpha, axis=-1)
+
+    # Ensure alpha is in the range [0, 1]
+    alpha = np.clip(alpha, 0, 1)
+
+    # Blend the images using the alpha channel
+    img[:] = (overlay[:, :, :3] * alpha + img * (1 - alpha)).astype(np.uint8)
+
+    return img
