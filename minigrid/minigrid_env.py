@@ -18,7 +18,7 @@ from minigrid.core.grid import Grid
 from minigrid.core.mission import MissionSpace
 from minigrid.core.world_object import Point, WorldObj
 
-from minigrid.rendering_manager import RenderingManager, BaseRenderingManager
+from minigrid.rendering.rendering_manager import RenderingManager, BaseRenderingManager
 
 T = TypeVar("T")
 
@@ -65,6 +65,9 @@ class MiniGridEnv(gym.Env):
 
         # Actions are discrete integer values
         self.action_space = spaces.Discrete(len(self.actions))
+
+        # Current agent action
+        self.action = 0
 
         # Number of cells (width and height) in the agent view
         assert agent_view_size % 2 == 1
@@ -536,6 +539,9 @@ class MiniGridEnv(gym.Env):
     ) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         self.step_count += 1
 
+        # Update the agents current action
+        self.action = action
+
         reward = 0
         terminated = False
         truncated = False
@@ -597,7 +603,7 @@ class MiniGridEnv(gym.Env):
             truncated = True
 
         if self.render_mode == "human":
-            self.render(action)
+            self.render()
 
         obs = self.gen_obs()
 
@@ -661,8 +667,8 @@ class MiniGridEnv(gym.Env):
     def get_frame(self):
         self.rendering_manager.get_frame()
 
-    def render(self, action=None):
-        self.rendering_manager.render(action)
+    def render(self):
+        self.rendering_manager.render()
 
     def close(self):
         if self.window:

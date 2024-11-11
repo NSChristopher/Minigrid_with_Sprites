@@ -12,7 +12,8 @@ from minigrid.utils.rendering import (
     highlight_img,
 )
 
-from minigrid.renderers.obj_renderer import (
+from minigrid.rendering.obj_renderers import (
+    ObjRenderer,
     AgentRenderer,
 )
 
@@ -24,7 +25,6 @@ class BaseRenderingManager(ABC):
 
     def __init__(self, env):
         self.env = env
-        self.action = 0
 
     @classmethod
     def render_tile(
@@ -147,10 +147,7 @@ class BaseRenderingManager(ABC):
         else:
             return self.get_full_render(highlight, tile_size)
 
-    def render(self, action=None):
-
-        if action:
-            self.action = action
+    def render(self):
 
         img = self.get_frame(self.env.highlight, self.env.tile_size, self.env.agent_pov)
 
@@ -197,15 +194,37 @@ class BaseRenderingManager(ABC):
         elif self.env.render_mode == "rgb_array":
             return img
 
+from minigrid.rendering.obj_renderers import (
+    AgentRenderer,
+    GoalRenderer,
+    FloorRenderer,
+    LavaRenderer,
+    WallRenderer,
+    DoorRenderer,
+    KeyRenderer,
+    BallRenderer,
+    BoxRenderer
+)
+
 
 class RenderingManager(BaseRenderingManager):
 
     def __init__(self, env):
         super().__init__(env)
+        self.agent_renderer = AgentRenderer()
+        self.renderer_map = {
+            'goal': GoalRenderer,
+            'floor': FloorRenderer,
+            'lava': LavaRenderer,
+            'wall': WallRenderer,
+            'door': DoorRenderer,
+            'key': KeyRenderer,
+            'ball': BallRenderer,
+            'box': BoxRenderer
+        }
 
-    @classmethod
     def render_tile(
-        cls,
+        self,
         obj: WorldObj | None,
         agent_dir: int | None = None,
         highlight: bool = False,
@@ -216,12 +235,16 @@ class RenderingManager(BaseRenderingManager):
         Render a tile and cache the result
         """
 
+        # Assign the renderer to the object if it doesn't have one
+        if obj and obj.renderer is None:
+            obj.renderer = self.renderer_map[obj.type]()
+
         # Hash map lookup key for the cache
         key: 'tuple[Any, ...]' = (agent_dir, highlight, tile_size)
-        key = obj.renderer.rendering_encoding() + key if obj else key
+        key = obj.encode() + obj.renderer.rendering_encoding() + key if obj and obj.renderer else key
 
-        if key in cls.tile_cache:
-            return cls.tile_cache[key]
+        if key in self.tile_cache:
+            return self.tile_cache[key]
 
         img = np.zeros(
             shape=(tile_size * subdivs, tile_size * subdivs, 3), dtype=np.uint8
@@ -229,12 +252,12 @@ class RenderingManager(BaseRenderingManager):
 
         # Overlay the agent
         if agent_dir is not None:
-            AgentRenderer().render(img, agent_dir)
+            self.agent_renderer.render(img, agent_dir)
 
         # Overlay the object
-        if obj is not None:
+        if obj and obj.renderer:
             # render object
-            obj.render(img)
+            obj.renderer.render(img, obj.encode())
 
         # Highlight the cell if needed
         if highlight:
@@ -244,7 +267,7 @@ class RenderingManager(BaseRenderingManager):
         img = downsample(img, subdivs)
 
         # Cache the rendered tile
-        cls.tile_cache[key] = img
+        self.tile_cache[key] = img
 
         return img
 
@@ -292,9 +315,13 @@ class RenderingManager(BaseRenderingManager):
 
         return img
     
-from minigrid.renderers.pretty_obj_renderers import (
+from minigrid.rendering.pretty_obj_renderers import (
     PrettyFloorRenderer,
     PrettyAgentRenderer,
+    PrettyWallRenderer,
+    PrettyGoalRenderer,
+    PrettyLavaRenderer,
+    PrettyKeyRenderer,
 )
 
 class PrettyRenderingManager(BaseRenderingManager):
@@ -302,6 +329,16 @@ class PrettyRenderingManager(BaseRenderingManager):
     def __init__(self, env):
         super().__init__(env)
         self.agent_renderer = PrettyAgentRenderer()
+        self.renderer_map = {
+            'goal': PrettyGoalRenderer,
+            'floor': PrettyFloorRenderer,
+            'lava': PrettyLavaRenderer,
+            'wall': PrettyWallRenderer,
+            'door': DoorRenderer,
+            'key': PrettyKeyRenderer,
+            'ball': BallRenderer,
+            'box': BoxRenderer
+        }
 
 
     def render_tile(
@@ -317,11 +354,10 @@ class PrettyRenderingManager(BaseRenderingManager):
         """
         Render a tile and cache the result
         """
-
         # Hash map lookup key for the cache
         key: 'tuple[Any, ...]' = (highlight, tile_size)
         key = self.agent_renderer.rendering_encoding() + key if agent_here else key
-        key = obj.renderer.rendering_encoding() + key if obj else key
+        key = obj.encode() + obj.renderer.rendering_encoding() + key if obj and obj.renderer else key
 
         if key in self.tile_cache:
             return self.tile_cache[key]
@@ -330,20 +366,23 @@ class PrettyRenderingManager(BaseRenderingManager):
             shape=(tile_size * subdivs, tile_size * subdivs, 3), dtype=np.uint8
         )
 
-        PrettyFloorRenderer().render(img)
+        PrettyFloorRenderer().render(img, (0,))
 
         # Overlay the object
-        if obj is not None:
+        if obj and obj.renderer:
             # render object
-            obj.render(img)
+            obj.renderer.render(img, obj.encode())
 
         # Overlay the agent
         if agent_here and agent_dir is not None:
             self.agent_renderer.render(img)
 
-        # Highlight the cell if needed
+        # Highlight the cell with a yellow orange glow
         if highlight:
-            highlight_img(img)
+            img = np.clip(img * 1.2 + np.array([30, 20, 0]), 0, 255).astype(np.uint8)
+        # Darken the cell
+        elif obj == None or (obj and obj.type not in ['lava']):
+            img = img * 0.7
 
         # Downsample the image to perform supersampling/anti-aliasing
         img = downsample(img, subdivs)
@@ -376,16 +415,21 @@ class PrettyRenderingManager(BaseRenderingManager):
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
 
         # Updates agents sprite index
-        self.agent_renderer.update_render_state(self.action, agent_dir)
+        self.agent_renderer.update_render_state(self.env.action, agent_dir)
 
         # Render the grid
         for j in range(0, self.env.height):
             for i in range(0, self.env.width):
                 cell = self.env.grid.get(i, j)
 
-                if cell is not None and cell.type == 'wall':
-                    proximity_grid = self.get_proximity_grid('wall', (i, j), self.env.grid)
-                    cell.renderer.set_render_state(proximity_grid)
+                if cell is not None:
+                    # Assign a renderer to the object if it doesn't have one
+                    if cell.renderer is None:
+                        cell.renderer = self.renderer_map[cell.type]()
+                    # Set the render state of the wall object
+                    if cell.type == 'wall':
+                        proximity_grid = self.get_proximity_grid('wall', (i, j), self.env.grid)
+                        cell.renderer.set_render_state(proximity_grid)
 
                 agent_here = np.array_equal(agent_pos, (i, j))
                 assert highlight_mask is not None

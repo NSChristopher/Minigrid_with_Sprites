@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import cv2
 import numpy as np
+from PIL import Image
 
 
 def downsample(img, factor):
@@ -136,21 +137,55 @@ def overlay_img(img, overlay):
     Overlay one image on top of another with proper alpha blending.
     """
     # Resize the overlay to match the input image dimensions
-    overlay = cv2.resize(overlay, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_LINEAR)
+    overlay = cv2.resize(overlay, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
 
-    # Check if the overlay has an alpha channel
+    # Separate the RGB and alpha channels
+    overlay_rgb = overlay[:, :, :3]
     if overlay.shape[2] == 4:
-        alpha = overlay[:, :, 3] / 255.0  # Extract the alpha channel and normalize to [0, 1]
+        overlay_alpha = overlay[:, :, 3] / 255.0  # Normalize alpha channel to range [0, 1]
     else:
-        alpha = np.ones((overlay.shape[0], overlay.shape[1]))
+        overlay_alpha = np.ones((overlay.shape[0], overlay.shape[1]), dtype=np.float32)
 
-    # Repeat alpha channel to match the image dimensions (height, width, 3)
-    alpha = np.expand_dims(alpha, axis=-1)
-
-    # Ensure alpha is in the range [0, 1]
-    alpha = np.clip(alpha, 0, 1)
-
-    # Blend the images using the alpha channel
-    img[:] = (overlay[:, :, :3] * alpha + img * (1 - alpha)).astype(np.uint8)
+    # Ensure alpha is in range [0, 1] and has correct dimensions
+    overlay_alpha = np.expand_dims(overlay_alpha, axis=-1)
+    
+    # Premultiply alpha in the overlay and blend it with the img
+    img[:] = (overlay_rgb * overlay_alpha + img * (1 - overlay_alpha)).astype(np.uint8)
 
     return img
+
+def extract_sprite_by_index(spritesheet_path, sprite_width, sprite_height, index):
+    """
+    Extract the sprite from the sprite sheet by index (row-major order).
+    This function assumes the sprite sheet is filled with equally sized sprites.
+    """
+
+    # Open the sprite sheet
+    spritesheet = Image.open(spritesheet_path)
+    spritesheet_array = np.array(spritesheet)
+
+    # Calculate how many sprites fit per row in the sprite sheet
+    sprites_per_row = spritesheet_array.shape[1] // sprite_width
+
+    # Calculate the row and column based on the index
+    row = index // sprites_per_row
+    col = index % sprites_per_row
+
+    # Calculate the coordinates of the sprite in the sheet
+    top = row * sprite_height
+    left = col * sprite_width
+    bottom = top + sprite_height
+    right = left + sprite_width
+
+    # Extract and return the sprite
+    return spritesheet_array[top:bottom, left:right]
+
+def find_nearest_neighbor(proximity_grid, Keys):
+    max_matches = -1
+    best_match = Keys[0]
+    for key in Keys:
+        matches = sum([1 for i, j in zip(proximity_grid, key) if i == j])
+        if matches > max_matches:
+            max_matches = matches
+            best_match = key
+    return best_match

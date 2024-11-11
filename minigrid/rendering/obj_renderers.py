@@ -1,7 +1,13 @@
 import math
 import numpy as np
-from minigrid.core.constants import TILE_PIXELS, COLORS
-
+from minigrid.core.constants import (
+    TILE_PIXELS,
+    COLOR_TO_IDX,
+    COLORS,
+    IDX_TO_COLOR,
+    IDX_TO_OBJECT,
+    OBJECT_TO_IDX,
+)
 from minigrid.utils.rendering import (
     fill_coords,
     point_in_circle,
@@ -13,15 +19,14 @@ from minigrid.utils.rendering import (
 
 class ObjRenderer():
 
-    def __init__(self, obj):
-        self.obj = obj
+    def __init__(self):
         self.render_state = 0
         self.loop = 0
 
     def rendering_encoding(self):
-            return self.obj.encode() + (self.render_state, self.loop)
+            return (self.render_state, self.loop)
 
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Takes an image and an encoding of the object to render,
         and renders the object on top of the passed image.
@@ -30,8 +35,8 @@ class ObjRenderer():
 
 class AgentRenderer(ObjRenderer):
 
-    def __init__(self, obj = None):
-        super().__init__(obj)
+    def __init__(self):
+        super().__init__()
 
     def render(self, img: np.ndarray, agent_dir: int):
         """
@@ -49,29 +54,32 @@ class AgentRenderer(ObjRenderer):
 
 class GoalRenderer(ObjRenderer):
     
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the goal object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
         fill_coords(img, point_in_rect(0, 1, 0, 1), color)
 
 class FloorRenderer(ObjRenderer):
     
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the floor object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
         fill_coords(img, point_in_rect(0, 1, 0, 1), color)
 
 class LavaRenderer(ObjRenderer):
     
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the lava object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
 
         # Background color
         fill_coords(img, point_in_rect(0, 1, 0, 1), color)
@@ -87,21 +95,23 @@ class LavaRenderer(ObjRenderer):
 
 class WallRenderer(ObjRenderer):
         
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the wall object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
         fill_coords(img, point_in_rect(0, 1, 0, 1), color)
 
 class DoorRenderer(ObjRenderer):
         
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the door object
         """
-        color = COLORS[self.obj.color]
-        state = self.obj.state
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
+        state = encoding[2]
 
         is_open = state == 0
         is_locked = state == 2
@@ -129,11 +139,12 @@ class DoorRenderer(ObjRenderer):
 
 class KeyRenderer(ObjRenderer):
         
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the key object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
 
         # Vertical quad
         fill_coords(img, point_in_rect(0.50, 0.63, 0.31, 0.88), color)
@@ -148,22 +159,24 @@ class KeyRenderer(ObjRenderer):
 
 class BallRenderer(ObjRenderer):
 
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the ball object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
 
         # Draw the ball
         fill_coords(img, point_in_circle(0.5, 0.5, 0.31), color)
 
 class BoxRenderer(ObjRenderer):
 
-    def render(self, img: np.ndarray):
+    def render(self, img: np.ndarray, encoding: tuple):
         """
         Render the box object
         """
-        color = COLORS[self.obj.color]
+        color_str = IDX_TO_COLOR[encoding[1]]
+        color = COLORS[color_str]
 
         # Draw the box
         fill_coords(img, point_in_rect(0.1, 0.9, 0.1, 0.9), color)

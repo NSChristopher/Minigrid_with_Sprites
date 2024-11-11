@@ -6,37 +6,16 @@ import numpy as np
 
 from minigrid.core.constants import DIR_TO_VEC
 
-from minigrid.renderers.obj_renderer import (
-    ObjRenderer,
-    GoalRenderer,
-    FloorRenderer,
-    LavaRenderer,
-    WallRenderer,
-    DoorRenderer,
-    KeyRenderer,
-    BallRenderer,
-    BoxRenderer,
-)
-
-# override the WallRenderer class with the PrettyWallRenderer class
-from minigrid.renderers.pretty_obj_renderers import PrettyWallRenderer as WallRenderer
-
 
 from typing import TYPE_CHECKING, Tuple
 
 from minigrid.core.constants import (
     COLOR_TO_IDX,
-    COLORS,
     IDX_TO_COLOR,
     IDX_TO_OBJECT,
     OBJECT_TO_IDX,
 )
-from minigrid.utils.rendering import (
-    fill_coords,
-    point_in_circle,
-    point_in_line,
-    point_in_rect,
-)
+from minigrid.rendering.obj_renderers import ObjRenderer
 
 if TYPE_CHECKING:
     from minigrid.minigrid_env import MiniGridEnv
@@ -62,8 +41,7 @@ class WorldObj:
         # Current position of the object
         self.cur_pos: Point | None = None
 
-        # object renderer
-        self.renderer: ObjRenderer
+        self.renderer: ObjRenderer | None = None
 
     def can_overlap(self) -> bool:
         """Can the agent overlap with this?"""
@@ -126,15 +104,10 @@ class WorldObj:
 
         return v
 
-    def render(self, img: np.ndarray):
-        """Draw this object with the given renderer"""
-        self.renderer.render(img)
-
 
 class Goal(WorldObj):
     def __init__(self):
         super().__init__("goal", "green")
-        self.renderer = GoalRenderer(obj = self)
 
     def can_overlap(self):
         return True
@@ -147,7 +120,6 @@ class Floor(WorldObj):
 
     def __init__(self, color: str = "blue"):
         super().__init__("floor", color)
-        self.renderer = FloorRenderer(obj = self)
 
     def can_overlap(self):
         return True
@@ -156,7 +128,6 @@ class Floor(WorldObj):
 class Lava(WorldObj):
     def __init__(self):
         super().__init__("lava", "orange")
-        self.renderer = LavaRenderer(obj = self)
 
     def can_overlap(self):
         return True
@@ -165,7 +136,6 @@ class Lava(WorldObj):
 class Wall(WorldObj):
     def __init__(self, color: str = "grey"):
         super().__init__("wall", color)
-        self.renderer = WallRenderer(obj = self)
 
     def see_behind(self):
         return False
@@ -173,7 +143,6 @@ class Wall(WorldObj):
 class Door(WorldObj):
     def __init__(self, color: str, is_open: bool = False, is_locked: bool = False):
         super().__init__("door", color)
-        self.renderer = DoorRenderer(obj = self)
         self.is_open = is_open
         self.is_locked = is_locked
 
@@ -218,7 +187,6 @@ class Door(WorldObj):
 class Key(WorldObj):
     def __init__(self, color: str = "blue"):
         super().__init__("key", color)
-        self.renderer = KeyRenderer(obj = self)
 
     def can_pickup(self):
         return True
@@ -227,7 +195,6 @@ class Key(WorldObj):
 class Ball(WorldObj):
     def __init__(self, color="blue"):
         super().__init__("ball", color)
-        self.renderer = BallRenderer(obj = self)
 
     def can_pickup(self):
         return True
@@ -236,7 +203,6 @@ class Ball(WorldObj):
 class Box(WorldObj):
     def __init__(self, color, contains: WorldObj | None = None):
         super().__init__("box", color)
-        self.renderer = BoxRenderer(obj = self)
         self.contains = contains
 
     def can_pickup(self):
@@ -250,7 +216,6 @@ class Box(WorldObj):
 class Monster(WorldObj):
     def __init__(self, color="red", direction=0):
         super().__init__("monster", color)
-        self.renderer = GoalRenderer(obj = self)
         self.direction = direction
         self.position = None
         self.path = []
