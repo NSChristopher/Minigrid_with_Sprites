@@ -422,14 +422,14 @@ class PrettyRenderingManager(BaseRenderingManager):
             for i in range(0, self.env.width):
                 cell = self.env.grid.get(i, j)
 
-                if cell is not None:
-                    # Assign a renderer to the object if it doesn't have one
+                if cell:
                     if cell.renderer is None:
                         cell.renderer = self.renderer_map[cell.type]()
-                    # Set the render state of the wall object
+                    # set the render state of the floor
                     if cell.type == 'wall':
-                        proximity_grid = self.get_proximity_grid('wall', (i, j), self.env.grid)
-                        cell.renderer.set_render_state(proximity_grid)
+                        cell.renderer.set_render_state(self.get_proximity_grid('wall', (i, j), self.env.grid))
+
+                
 
                 agent_here = np.array_equal(agent_pos, (i, j))
                 assert highlight_mask is not None

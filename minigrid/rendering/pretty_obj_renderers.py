@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 from minigrid.core.constants import IDX_TO_COLOR, TILE_PIXELS, COLORS
 from minigrid.rendering.obj_renderers import ObjRenderer
-from minigrid.utils.rendering import overlay_img, extract_sprite_by_index, find_nearest_neighbor
+from minigrid.utils.rendering import overlay_img, extract_sprite_by_index, find_nearest_neighbor, recolor_sprite
 
 WALL_TYPES = {
     (0, 0, 0, 
@@ -70,7 +70,7 @@ class PrettyAgentRenderer(ObjRenderer):
         self.agent_sprites = np.array(Image.open(self.agent_sprites_dir))
 
         # Sprite indexing parameters
-        self.sprite_row = 2
+        self.sprite_row = 7
         self.sprites_per_row = 16
         self.sprite_index = 0
 
@@ -96,18 +96,26 @@ class PrettyAgentRenderer(ObjRenderer):
         if agent_dir is not None:
             self.agent_dir = agent_dir
 
-        # If action is 2 (Move forward), update the loop index
+        # If action is 2 or 1, 3 (Move forward or left/right)
         if action in [1, 2, 3]:
             self.loop = (self.loop + 1) % self.loop_res
             self.sprite_index = self.sprite_row * self.sprites_per_row + self.DIR_TO_ORDINAL[self.agent_dir] * self.loop_res + self.loop
         
-        # If action is 3 (Pick up), update the pickup flag
+        # If action is 3 (Pick up)
         if action == 3:
             self.sprite_index = self.sprite_row * self.sprites_per_row + 13
         
-        # If action is 4 (Drop), update the drop flag
+        # If action is 4 (Drop)
         if action == 4:
             self.sprite_index = self.sprite_row * self.sprites_per_row + 14
+
+        # If action is 5 (Toggle)
+        if action == 5:
+            self.sprite_index = self.sprite_row * self.sprites_per_row + 14
+
+        # If action is 6 (Done)
+        if action == 6:
+            self.sprite_index = self.sprite_row * self.sprites_per_row + 11
 
     def rendering_encoding(self):
         return (self.sprite_index,)
@@ -225,6 +233,9 @@ class PrettyKeyRenderer(ObjRenderer):
 
         # Extract the sprite with the alpha channel
         key_sprite = extract_sprite_by_index(self.key_sprites_dir, 16, 16, self.loop)
+
+        # Change the color of the sprite
+        key_sprite = recolor_sprite(key_sprite, color)
 
         # Overlay the sprite on the image
         overlay_img(img, key_sprite)

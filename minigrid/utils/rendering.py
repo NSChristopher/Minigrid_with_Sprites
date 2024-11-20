@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 
 def downsample(img, factor):
@@ -189,3 +189,20 @@ def find_nearest_neighbor(proximity_grid, Keys):
             max_matches = matches
             best_match = key
     return best_match
+
+def recolor_sprite(sprite: np.ndarray, base_color: tuple):
+    """
+    Converts the sprite to grayscale and recolors it based on the given color.
+    """
+    # Convert to grayscale
+    grayscale = np.mean(sprite[..., :3], axis=2, keepdims=True).astype(np.uint8)
+    
+    # Normalize and recolor in one step
+    recolored_rgb = (grayscale / 255.0 * np.array(base_color)).astype(np.uint8)
+
+    # Combine recolored RGB with original alpha
+    recolored_sprite = np.dstack((recolored_rgb, sprite[..., 3]))
+
+    return recolored_sprite
+
+

@@ -125,8 +125,6 @@ class MiniGridEnv(gym.Env):
 
         if isinstance(rendering_manager, type):
             self.rendering_manager = rendering_manager(env=self)
-        else:
-            self.rendering_manager = rendering_manager
 
     def reset(
         self,
