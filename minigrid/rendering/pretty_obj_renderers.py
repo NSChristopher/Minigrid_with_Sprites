@@ -173,6 +173,9 @@ class PrettyGoalRenderer(ObjRenderer):
         self.loop = 0
         self.loop_res = 7
 
+        self.is_dynamic = True
+        self.is_transparent = True
+
     def render(self, img: np.ndarray, encoding: tuple):
         """
         Takes an image and renders the object on top of the passed image.
@@ -223,6 +226,9 @@ class PrettyKeyRenderer(ObjRenderer):
 
         self.loop = 0
         self.loop_res = 7
+
+        self.is_dynamic = True
+        self.is_transparent = True
 
     def render(self, img: np.ndarray, encoding: tuple):
         """

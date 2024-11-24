@@ -32,7 +32,7 @@ class Grid:
         self.width: int = width
         self.height: int = height
 
-        self.grid: list[WorldObj | None] = [None] * (width * height)
+        self.grid: np.ndarray = np.full((width, height), None, dtype=object)
 
     def __contains__(self, key: Any) -> bool:
         if isinstance(key, WorldObj):
@@ -60,7 +60,9 @@ class Grid:
     def copy(self) -> Grid:
         from copy import deepcopy
 
-        return deepcopy(self)
+        new_grid = Grid(self.width, self.height)
+        new_grid.grid = deepcopy(self.grid)
+        return new_grid
 
     def set(self, i: int, j: int, v: WorldObj | None):
         assert (
@@ -69,13 +71,12 @@ class Grid:
         assert (
             0 <= j < self.height
         ), f"row index {j} outside of grid of height {self.height}"
-        self.grid[j * self.width + i] = v
+        self.grid[i, j] = v
 
     def get(self, i: int, j: int) -> WorldObj | None:
         assert 0 <= i < self.width
         assert 0 <= j < self.height
-        assert self.grid is not None
-        return self.grid[j * self.width + i]
+        return self.grid[i, j]
 
     def horz_wall(
         self,
@@ -111,36 +112,27 @@ class Grid:
         """
         Rotate the grid to the left (counter-clockwise)
         """
+        new_grid = Grid(self.height, self.width)
+        new_grid.grid = np.rot90(self.grid, k=1)
 
-        grid = Grid(self.height, self.width)
-
-        for i in range(self.width):
-            for j in range(self.height):
-                v = self.get(i, j)
-                grid.set(j, grid.height - 1 - i, v)
-
-        return grid
+        return new_grid
 
     def slice(self, topX: int, topY: int, width: int, height: int) -> Grid:
         """
         Get a subset of the grid
         """
 
-        grid = Grid(width, height)
-
-        for j in range(0, height):
-            for i in range(0, width):
-                x = topX + i
-                y = topY + j
-
+        new_grid = Grid(width, height)
+        for j in range(height):
+            for i in range(width):
+                x, y = topX + i, topY + j
                 if 0 <= x < self.width and 0 <= y < self.height:
-                    v = self.get(x, y)
+                    new_grid.set(i, j, self.get(x, y))
                 else:
-                    v = Wall()
+                    # Fill out-of-bounds cells with `None` or a default object
+                    new_grid.set(i, j, None)
 
-                grid.set(i, j, v)
-
-        return grid
+        return new_grid
 
     def encode(self, vis_mask: np.ndarray | None = None) -> np.ndarray:
         """
@@ -179,15 +171,17 @@ class Grid:
 
         vis_mask = np.ones(shape=(width, height), dtype=bool)
 
-        grid = Grid(width, height)
+        new_grid = Grid(width, height)
+
         for i in range(width):
             for j in range(height):
                 type_idx, color_idx, state = array[i, j]
                 v = WorldObj.decode(type_idx, color_idx, state)
-                grid.set(i, j, v)
+                new_grid.set(i, j, v)
                 vis_mask[i, j] = type_idx != OBJECT_TO_IDX["unseen"]
 
-        return grid, vis_mask
+
+        return new_grid, vis_mask
 
     def process_vis(self, agent_pos: tuple[int, int]) -> np.ndarray:
 
