@@ -225,3 +225,22 @@ class Grid:
                     self.set(i, j, None)
 
         return mask
+
+    def get_proximity_encoding(self, i: int, j: int, r: int = 1) -> np.ndarray:
+        """
+        return compact encoding of the r-radius proximity around the cell at (i, j)
+        """
+        assert 0 <= i < self.width
+        assert 0 <= j < self.height
+
+        proximity_encoding = np.zeros((2 * r + 1, 2 * r + 1, 3), dtype="uint8")
+
+        for dx in range(-r, r + 1):
+            for dy in range(-r, r + 1):
+                x, y = i + dx, j + dy
+                if 0 <= x < self.width and 0 <= y < self.height:
+                    v = self.get(x, y)
+                    if v is not None:
+                        proximity_encoding[dx + r, dy + r, :] = v.encode()
+
+        return proximity_encoding

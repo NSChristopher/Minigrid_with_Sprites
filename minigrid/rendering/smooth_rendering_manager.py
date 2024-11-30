@@ -1,7 +1,7 @@
 from typing import Any, Callable
 import math
 import numpy as np
-import pygame
+import pyglet
 from abc import ABC, abstractmethod
 
 from minigrid.core.constants import TILE_PIXELS
@@ -11,11 +11,6 @@ from minigrid.rendering.rendering_manager import BaseRenderingManager
 from minigrid.utils.rendering import (
     downsample,
     highlight_img,
-)
-
-from minigrid.rendering.obj_renderers import (
-    ObjRenderer,
-    AgentRenderer,
 )
 
 from minigrid.rendering.pretty_obj_renderers import (
@@ -37,11 +32,13 @@ class SmoothRenderingManager(BaseRenderingManager):
             'floor': PrettyFloorRenderer,
             'lava': PrettyLavaRenderer,
             'wall': PrettyWallRenderer,
-            'door': DoorRenderer,
+            'door': None,
             'key': PrettyKeyRenderer,
-            'ball': BallRenderer,
-            'box': BoxRenderer
+            'ball': None,
+            'box': None
         }
+
+        self.floor_renderers = {}
 
         # Assume 10 FPS for rendering
         self.render_fps = 10
@@ -52,6 +49,8 @@ class SmoothRenderingManager(BaseRenderingManager):
         # Frame duration in terms of simulation steps
         self.step_duration = 1 / self.render_fps  # Time per frame (0.1 seconds at 10 FPS)
 
+        self.window = None
+
     def pre_render_setup(self):
         """
         Perform any setup needed before rendering
@@ -60,49 +59,49 @@ class SmoothRenderingManager(BaseRenderingManager):
         # loop through all objects in the grid
         for j in range(0, self.env.height):
             for i in range(0, self.env.width):
-                cell = self.env.grid.get(i, j)
 
-                if cell.renderer is None:
-                    proximity_grid = []
+                obj = self.env.grid.get(i, j)
 
-                    # Check neighbors of the cell in 3x3 pattern
-                    for dy in range(-1, 2):
-                        for dx in range(-1, 2):
-                            
-                            neighbor_x = i + dx
-                            neighbor_y = j + dy
+                if obj:
+                    if obj.renderer is None:
+                        obj.renderer = self.renderer_map[obj.type]()
 
-                            if 0 <= neighbor_x < self.env.width and 0 <= neighbor_y < self.env.height:
-                                neighbor_cell = self.env.grid.get(neighbor_x, neighbor_y)
-                            else:
-                                neighbor_cell = None
+                    # check if obj has a certain function
+                    if hasattr(obj, 'set_proximity_encoding'):
+                        proximity_encoding = self.env.grid.get_proximity_encoding(i, j)
+                        obj.renderer.set_proximity_encoding(proximity_encoding)
 
-                            proximity_grid.append(neighbor_cell)
+                # else:
+                #     floor_renderer = PrettyFloorRenderer()
 
-                    # Assign renderers and set render states for static objects
+                #     proximity_encoding = self.env.grid.get_proximity_encoding(i, j)
+                #     floor_renderer.set_proximity_encoding(proximity_encoding)
 
-
-
+                #     self.floor_renderers[(i, j)] = floor_renderer
 
 
     def render(self):
         """
         """
 
-        frame = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
+        if self.env.render_mode == 'human':
+            if self.window is None:
+                self.window = pyglet.window.Window(
+                    width=self.env.width * TILE_PIXELS,
+                    height=self.env.height * TILE_PIXELS
+                )
+                self.pre_render_setup()
 
-        for current_frame in range(self.frames_per_action):
+            self.window.clear()
 
-            
+            # Render the grid
+            for j in range(0, self.env.height):
+                for i in range(0, self.env.width):
+                    obj = self.env.grid.get(i, j)
 
-            # Render static objects (i.e. the background: walls, floor, etc.)
-            render_static_objects()
-
-            # Render dynamic objects (i.e. boxes, balls, keys, etc.)
-            render_dynamic_objects(current_frame)
-
-            # Render the agent
-            render_agent()
+                    if obj and obj.renderer:
+                        if obj.renderer.__class__.__name__ == 'PrettyWallRenderer':
+                            obj.renderer.render(i, j)
 
 
         
@@ -272,36 +271,3 @@ class SmoothRenderingManager(BaseRenderingManager):
 
 
     #     return img
-    
-
-
-
-
-
-
-    def get_proximity_grid(self, type, cur_pos, grid, proximity=1) -> tuple:
-        """
-        Get a proximity grid of a type of object around a position in the grid.
-        This works for any proximity value, creating a grid of size (2*proximity + 1) x (2*proximity + 1).
-        """
-
-        x, y = cur_pos  # cur_pos is (i, j)
-
-        # Create a proximity grid of size (2*proximity + 1) x (2*proximity + 1)
-        proximity_grid_size = 2 * proximity + 1
-        proximity_grid = np.zeros((proximity_grid_size, proximity_grid_size), dtype=int)
-
-        # Iterate over the proximity grid (outer loop on rows j, inner loop on columns i)
-        for j in range(-proximity, proximity + 1):  # Outer loop (rows)
-            for i in range(-proximity, proximity + 1):  # Inner loop (columns)
-                # Check bounds of the grid
-                if 0 <= x + i < grid.width and 0 <= y + j < grid.height:
-                    cell = grid.get(x + i, y + j)
-                    if cell is not None and cell.type == type:
-                        proximity_grid[j + proximity, i + proximity] = 1  # Maintain row/column order
-                    else:
-                        proximity_grid[j + proximity, i + proximity] = 0
-                else:
-                    proximity_grid[j + proximity, i + proximity] = 0
-
-        return tuple(proximity_grid.flatten().tolist())
