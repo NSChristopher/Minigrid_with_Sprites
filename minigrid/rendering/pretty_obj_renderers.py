@@ -7,6 +7,7 @@ from minigrid.utils.rendering import overlay_img, extract_sprite_by_index, find_
 from abc import ABC
 
 import pyglet
+from pyglet.image import ImageGrid
 
 
 class PrettyObjRenderer(ABC):
@@ -19,17 +20,18 @@ class PrettyObjRenderer(ABC):
         pass
 
 
-environments_sprite_sheet = pyglet.image.load('sprites/oryx_26bit_walls.png')
+environments_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_walls.png')
 floor_shadows_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_floor_shadows.png')
-environments_grid = pyglet.image.ImageGrid(environments_sprite_sheet, 27, 23)
-floor_shadows_grid = pyglet.image.ImageGrid(floor_shadows_sprite_sheet, 27, 23)
+environments_grid = ImageGrid(environments_sprite_sheet, rows=23, columns=27, row_padding=0, column_padding=0)
+floor_shadows_grid = ImageGrid(floor_shadows_sprite_sheet, rows=1, columns=8, row_padding=0, column_padding=0)
 
-# all sprites from row 4
-env_tiles = [environments_grid[27 * 4 + i] for i in range(27)]
+# all sprites from row 19 starting from bottom left corner
+access_row = 18
+env_tiles = [environments_grid[(27 * access_row) + i] for i in range(27)]
 
 wall_tiles = env_tiles[:3] + env_tiles[9:]
 floor_tiles = env_tiles[3:9]
-floor_shadow_tiles = [floor_shadows_grid[27 * 4 + i] for i in range(27)]
+floor_shadow_tiles = [floor_shadows_grid[i] for i in range(8)]
 
 # wall tile mapping
 
@@ -95,33 +97,64 @@ WALL_TYPES = {
 #     return best_match
 
 class PrettyWallRenderer(PrettyObjRenderer):
-    # Shared sprite instance
-    sprite = pyglet.sprite.Sprite()
+
+    R_TILE_PIXELS = 24
     
-    def __init__(self, obj: WorldObj):
+    def __init__(self, obj: WorldObj, batch: pyglet.graphics.Batch):
         super().__init__(obj)
+        self.obj = obj
+        self.sprite = pyglet.sprite.Sprite(img=wall_tiles[0], batch=batch)
 
-        if PrettyWallRenderer.sprite is None:
-            PrettyWallRenderer.sprite = pyglet.sprite.Sprite()
-
+        # Proximity encoding of surrounding objects
         self.proximity_encoding = None
-        self.wall_type: tuple[int, int] = (0, 0)
 
-    def set_proximity_encoding(self, encoding: np.ndarray):
+        # Wall type
+        self.wall_type: tuple[int, int] = (0, 0)
+        self.wall_sprite = None
+
+    def set_proximity_encoding(self, encoding: np.ndarray, x: int, y: int):
+        """
+        Set the proximity encoding of the wall object, set the wall type 
+        and set the sprite location.
+        """
         self.proximity_encoding = encoding
 
-        self.set_wall_type(self.proximity_encoding[0])
+        self.set_wall_type(self.proximity_encoding)
+
+        self.sprite.update(x=self.R_TILE_PIXELS * x, 
+                           y=self.R_TILE_PIXELS * y)
 
     def set_wall_type(self, proximity_encoding: np.ndarray):
-        prox_flat = tuple(proximity_encoding.flatten())
+        """
+        Set the wall type based on the proximity encoding.
+        """
+        mapped_proximity = np.where(proximity_encoding == 2, 2, 0)
+        prox_flat = tuple(int(val) for val in mapped_proximity.flatten())
 
-        best_match = find_nearest_neighbor(prox_flat, WALL_TYPES.keys())
-        self.wall_type = WALL_TYPES[best_match]
+        if prox_flat in WALL_TYPES:
+            self.wall_type = WALL_TYPES[prox_flat]
+            # print(self.wall_type)
+            # for x in range(3):
+            #     for y in range(3):
+            #         print(proximity_encoding[x, y], end=' ')
+            #     print()
+        else:
+            best_match = find_nearest_neighbor(prox_flat, list(WALL_TYPES.keys()))
+            self.wall_type = WALL_TYPES[best_match]
 
-    def render(self, x: int, y: int):
-        self.sprite.x = x * TILE_PIXELS
-        self.sprite.y = y * TILE_PIXELS
-        self.sprite.image = wall_tiles[self.wall_type[0]]
+        random = np.random.rand(1)
+        if random > 0.15:
+            self.wall_sprite = wall_tiles[self.wall_type[0]]
+        else:
+            self.wall_sprite = wall_tiles[self.wall_type[1]]
+
+        self.sprite.image = self.wall_sprite
+
+    def update(self, x: int, y: int):
+        """
+        Update state.
+        """
+        self.sprite.update(x * self.R_TILE_PIXELS, y * self.R_TILE_PIXELS)
 
 
 class PrettyAgentRenderer(ObjRenderer):

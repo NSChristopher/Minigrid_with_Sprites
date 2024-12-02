@@ -4,14 +4,9 @@ import numpy as np
 import pyglet
 from abc import ABC, abstractmethod
 
-from minigrid.core.constants import TILE_PIXELS
 from minigrid.core.world_object import WorldObj
 from minigrid.rendering.rendering_manager import BaseRenderingManager
 
-from minigrid.utils.rendering import (
-    downsample,
-    highlight_img,
-)
 
 from minigrid.rendering.pretty_obj_renderers import (
     PrettyFloorRenderer,
@@ -24,18 +19,22 @@ from minigrid.rendering.pretty_obj_renderers import (
 
 class SmoothRenderingManager(BaseRenderingManager):
 
+    RM_TILE_PIXELS = 24
+
     def __init__(self, env):
         super().__init__(env)
-        self.agent_renderer = PrettyAgentRenderer()
-        self.renderer_map = {
-            'goal': PrettyGoalRenderer,
-            'floor': PrettyFloorRenderer,
-            'lava': PrettyLavaRenderer,
+        # self.agent_renderer = PrettyAgentRenderer()
+        self.static_renderer_map = {
+            'goal': PrettyWallRenderer,
+            'floor': PrettyWallRenderer,
+            'lava': PrettyWallRenderer,
             'wall': PrettyWallRenderer,
-            'door': None,
-            'key': PrettyKeyRenderer,
-            'ball': None,
-            'box': None
+            'door': PrettyWallRenderer,
+            'key': PrettyWallRenderer,
+            'ball': PrettyWallRenderer,
+            'box': PrettyWallRenderer
+        }
+        self.dynamic_renderer_map = {
         }
 
         self.floor_renderers = {}
@@ -50,26 +49,42 @@ class SmoothRenderingManager(BaseRenderingManager):
         self.step_duration = 1 / self.render_fps  # Time per frame (0.1 seconds at 10 FPS)
 
         self.window = None
+        self.batch = pyglet.graphics.Batch()
 
     def pre_render_setup(self):
         """
         Perform any setup needed before rendering
         """
 
+        # Create the window
+        self.window = pyglet.window.Window(
+            width=self.env.width * self.RM_TILE_PIXELS,
+            height=self.env.height * self.RM_TILE_PIXELS,
+        )
+
+    def update_renderers(self):
+
         # loop through all objects in the grid
-        for j in range(0, self.env.height):
-            for i in range(0, self.env.width):
+        for i in range(self.env.width):
+            for j in range(self.env.height):
 
                 obj = self.env.grid.get(i, j)
 
                 if obj:
                     if obj.renderer is None:
-                        obj.renderer = self.renderer_map[obj.type]()
+                        if obj.type in self.static_renderer_map:
+                            obj.renderer = self.static_renderer_map[obj.type](obj, self.batch)
 
-                    # check if obj has a certain function
-                    if hasattr(obj, 'set_proximity_encoding'):
-                        proximity_encoding = self.env.grid.get_proximity_encoding(i, j)
-                        obj.renderer.set_proximity_encoding(proximity_encoding)
+                            # set the proximity encoding for static object renderers
+                            proximity_encoding = self.env.grid.get_proximity_encoding(i, j)
+
+                            obj.renderer.set_proximity_encoding(proximity_encoding, i, j)
+
+
+                        elif obj.type in self.dynamic_renderer_map:
+                            obj.renderer = self.dynamic_renderer_map[obj.type](obj, self.batch)
+                    else:
+                        obj.renderer.update(i, j)
 
                 # else:
                 #     floor_renderer = PrettyFloorRenderer()
@@ -86,22 +101,33 @@ class SmoothRenderingManager(BaseRenderingManager):
 
         if self.env.render_mode == 'human':
             if self.window is None:
-                self.window = pyglet.window.Window(
-                    width=self.env.width * TILE_PIXELS,
-                    height=self.env.height * TILE_PIXELS
-                )
                 self.pre_render_setup()
+                
+            assert self.window is not None
+            # Process window events to keep the window responsive
+            self.window.dispatch_events()
 
+            # Clear the window
             self.window.clear()
 
-            # Render the grid
-            for j in range(0, self.env.height):
-                for i in range(0, self.env.width):
-                    obj = self.env.grid.get(i, j)
+            # Update the renderers
+            self.update_renderers()
 
-                    if obj and obj.renderer:
-                        if obj.renderer.__class__.__name__ == 'PrettyWallRenderer':
-                            obj.renderer.render(i, j)
+            # Draw the batch
+            self.batch.draw()
+
+            # Flip the window buffers to update the display
+            self.window.flip()
+
+
+    def close(self):
+        """
+        Close the rendering
+        """
+        if self.window:
+            self.window.close()
+            self.window = None
+
 
 
         

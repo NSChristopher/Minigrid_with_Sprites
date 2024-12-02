@@ -233,7 +233,7 @@ class Grid:
         assert 0 <= i < self.width
         assert 0 <= j < self.height
 
-        proximity_encoding = np.zeros((2 * r + 1, 2 * r + 1, 3), dtype="uint8")
+        proximity_encoding = np.zeros((2 * r + 1, 2 * r + 1), dtype="uint8")
 
         for dx in range(-r, r + 1):
             for dy in range(-r, r + 1):
@@ -241,6 +241,6 @@ class Grid:
                 if 0 <= x < self.width and 0 <= y < self.height:
                     v = self.get(x, y)
                     if v is not None:
-                        proximity_encoding[dx + r, dy + r, :] = v.encode()
+                        proximity_encoding[dx + r, dy + r] = v.encode()[0]
 
         return proximity_encoding
