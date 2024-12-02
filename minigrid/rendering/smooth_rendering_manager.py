@@ -51,6 +51,7 @@ class SmoothRenderingManager(BaseRenderingManager):
         self.window = None
         self.batch = pyglet.graphics.Batch()
 
+
     def pre_render_setup(self):
         """
         Perform any setup needed before rendering
