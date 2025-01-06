@@ -669,5 +669,4 @@ class MiniGridEnv(gym.Env):
         self.rendering_manager.render()
 
     def close(self):
-        if self.window:
-            pygame.quit()
+        self.rendering_manager.close()

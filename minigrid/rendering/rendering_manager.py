@@ -193,6 +193,9 @@ class BaseRenderingManager(ABC):
 
         elif self.env.render_mode == "rgb_array":
             return img
+        
+    def close(self):
+        pass
 
 from minigrid.rendering.obj_renderers import (
     AgentRenderer,
@@ -314,3 +317,7 @@ class RenderingManager(BaseRenderingManager):
                 img[ymin:ymax, xmin:xmax, :] = tile_img
 
         return img
+    
+    def close(self):
+        if self.env.window is not None:
+            pygame.quit()
