@@ -181,6 +181,11 @@ class MiniGridEnv(gym.Env):
     @property
     def steps_remaining(self):
         return self.max_steps - self.step_count
+    
+    @property
+    def current_reward(self):
+        return self._reward()
+
 
     def pprint_grid(self):
         """
