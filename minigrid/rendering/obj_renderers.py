@@ -23,6 +23,12 @@ class ObjRenderer():
         self.render_state = 0
         self.loop = 0
 
+        # is the object dynamic or static
+        self.is_dynamic = False
+
+        # does the object have transparency
+        self.is_transparent = False
+
     def rendering_encoding(self):
             return (self.render_state, self.loop)
 

@@ -30,7 +30,7 @@ class MiniGridEnv(gym.Env):
 
     metadata = {
         "render_modes": ["human", "rgb_array"],
-        "render_fps": 10,
+        "render_fps": 20,
     }
 
     def __init__(
@@ -181,6 +181,11 @@ class MiniGridEnv(gym.Env):
     @property
     def steps_remaining(self):
         return self.max_steps - self.step_count
+    
+    @property
+    def current_reward(self):
+        return self._reward()
+
 
     def pprint_grid(self):
         """
@@ -663,11 +668,10 @@ class MiniGridEnv(gym.Env):
         return obs
 
     def get_frame(self):
-        self.rendering_manager.get_frame()
+        return self.rendering_manager.render()
 
     def render(self):
         self.rendering_manager.render()
 
     def close(self):
-        if self.window:
-            pygame.quit()
+        self.rendering_manager.close()
