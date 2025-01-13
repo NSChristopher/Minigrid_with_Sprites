@@ -1,9 +1,7 @@
 import numpy as np
-from PIL import Image
-from minigrid.core.constants import IDX_TO_COLOR, OBJECT_TO_IDX, TILE_PIXELS, COLORS
+from minigrid.core.constants import COLORS
 from minigrid.core.world_object import WorldObj
-from minigrid.rendering.obj_renderers import ObjRenderer
-from minigrid.utils.rendering import overlay_img, extract_sprite_by_index, find_nearest_neighbor, recolor_sprite
+from minigrid.utils.rendering import find_nearest_neighbor
 from abc import ABC
 from minigrid.core.actions import Actions
 
@@ -34,7 +32,6 @@ class PrettyObjRenderer(ABC):
 environments_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_walls.png')
 floor_shadows_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_floor_shadows.png')
 environments_grid = ImageGrid(environments_sprite_sheet, rows=23, columns=27, row_padding=0, column_padding=0)
-floor_shadows_grid = ImageGrid(floor_shadows_sprite_sheet, rows=1, columns=8, row_padding=0, column_padding=0)
 
 # all sprites from row 19 starting from bottom left corner
 access_row = 18
@@ -42,7 +39,6 @@ env_tiles = [environments_grid[(27 * access_row) + i] for i in range(27)]
 
 wall_tiles = env_tiles[:3] + env_tiles[9:]
 floor_tiles = env_tiles[3:9]
-floor_shadow_tiles = [floor_shadows_grid[i] for i in range(8)]
 
 # wall tile mapping
 WALL_TYPES = {
@@ -82,7 +78,7 @@ WALL_TYPES = {
 
 class PrettyWallRenderer(PrettyObjRenderer):
     
-    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
         super().__init__(obj)
         self.obj = obj
         self.sprite = pyglet.sprite.Sprite(img=wall_tiles[0], x=x, y=y, batch=batch, group=group)
@@ -116,8 +112,6 @@ class PrettyWallRenderer(PrettyObjRenderer):
         if prox_flat in WALL_TYPES:
             self.type = WALL_TYPES[prox_flat]
         else:
-            print(prox_flat)
-            print("had to find nearest neighbor")
             best_match = find_nearest_neighbor(prox_flat, list(WALL_TYPES.keys()))
             self.type = WALL_TYPES[best_match]
 
@@ -138,63 +132,17 @@ class PrettyWallRenderer(PrettyObjRenderer):
 
 class PrettyFloorRenderer(PrettyObjRenderer):
         
-        def __init__(self, obj: WorldObj | None, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+        def __init__(self, obj: WorldObj | None, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
             super().__init__(obj)
             self.obj = obj
             self.sprite = pyglet.sprite.Sprite(img=floor_tiles[1], x=x, y=y, batch=batch, group=group)
             self.sprite.update(scale=scale_factor)
-            self.shadow_sprite = None
 
-            # save variables for initializing floor shadown sprite later
-            self.x = x
-            self.y = y
-            self.batch = batch
-            self.group = group
-            self.scale_factor = scale_factor
-
-        def set_proximity_encoding(self, encoding: np.ndarray):
+        def set_type(self, type: int):
             """
-            Set the proximity encoding of the floor object.
+            Set the floor type.
             """
-            self.proximity_encoding = encoding
-
-            self.set_type(self.proximity_encoding)
-
-        def set_type(self, proximity_encoding: np.ndarray | None = None, type = None):
-            """
-            Set the floor type based on the proximity encoding.
-            """
-            if proximity_encoding is not None:
-                is_wall_above = proximity_encoding[0, 1] == OBJECT_TO_IDX['wall']
-
-                if is_wall_above == True:
-                    self.shadow_sprite = pyglet.sprite.Sprite(
-                        img=floor_shadow_tiles[2], 
-                        x=self.x, 
-                        y=self.y, 
-                        batch=self.batch, 
-                        group=pyglet.graphics.Group(order=2)
-                    )
-                    self.shadow_sprite.update(scale=self.scale_factor)
-
-            if type:
-                if type == 1:
-                    rand = np.random.rand(1)
-                    if rand < 0.33:
-                        self.sprite.image = floor_tiles[2]
-
-        def delete_sprite(self):
-            """
-            Delete the sprite.
-            """
-            if self.sprite is not None:
-                self.sprite.delete()
-
-            if self.shadow_sprite is not None:
-                self.shadow_sprite.delete()
-
-            self.sprite = None
-            self.shadow_sprite = None
+            self.sprite.image = floor_tiles[type]
 
 
 door_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_doors.png')
@@ -212,7 +160,7 @@ greyscale_locked_door = greyscale_door_grid[2]
 
 class PrettyDoorRenderer(PrettyObjRenderer):
     
-        def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+        def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
             super().__init__(obj)
 
             # images
@@ -257,7 +205,7 @@ open_chest_gold = chests_grid[5]
 
 class PrettyGoalRenderer(PrettyObjRenderer):
         
-        def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+        def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
             super().__init__(obj)
             self.obj = obj
             self.sprite = pyglet.sprite.Sprite(img=open_chest_gold, x=x, y=y, batch=batch, group=group)
@@ -339,7 +287,7 @@ class PrettyAgentRenderer(PrettyObjRenderer):
     # Agent directions
     # 0: right, 1: down, 2: left, 3: up
 
-    def __init__(self, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+    def __init__(self, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
         super().__init__(None)
         self.sprite = pyglet.sprite.Sprite(img=standing[7], x=x, y=y, batch=batch, group=group)
         self.sprite.update(scale=scale_factor)
@@ -436,17 +384,81 @@ lava_grid = ImageGrid(lava_sprite_sheet, rows=rows, columns=columns)
 
 lava_animation = Animation([AnimationFrame(lava_grid[21], 0.1), AnimationFrame(lava_grid[18], 0.1)])
 
+LAVA_EDGE_TYPES = {
+    (9,9,9, 9,0,0, 9,0,0): 30, # top left corner edge
+    (9,9,9, 0,0,0, 0,0,0): 31, # top edge
+    (9,9,9, 0,0,9, 0,0,9): 32, # top right corner edge
+    (9,0,0, 9,0,0, 9,0,0): 27, # left edge
+    (9,9,9, 9,0,9, 9,9,9): 28, # edge on all sides
+    (0,0,9, 0,0,9, 9,9,9): 29, # right edge
+    (9,0,0, 9,0,0, 9,9,9): 24, # bottom left corner edge
+    (0,0,0, 0,0,0, 9,9,9): 25, # bottom edge
+    (0,0,9, 0,0,9, 9,9,9): 26, # bottom right corner edge
+    (9,9,9, 9,0,9, 9,0,9): 22, # left right and top edges
+    (9,9,9, 9,0,9, 0,0,0): 22, # left right and top edges   
+    (9,9,9, 0,0,9, 9,9,9): 23, # top right and bottom edges
+    (0,9,9, 0,0,9, 0,9,9): 23, # top right and bottom edges
+    (9,0,9, 9,0,9, 9,9,9): 19, # left right and bottom edges
+    (9,9,9, 9,0,0, 9,9,9): 20, # top left and bottom edges
+    (9,9,9, 9,0,0,9,0,9): 15, # top left and bottom right corner
+    (9,9,9, 0,0,9, 9,0,9): 16, # top right and bottom left corner
+    (9,0,9, 9,0,0, 9,9,9): 12, # left bottom and top right corner
+    (9,0,9, 0,0,9, 9,9,9): 13, # right bottom and top left corner
+    (9,0,0, 0,0,0, 0,0,0): 9, # top left corner
+    (0,0,9, 0,0,0, 0,0,0): 10, # top right corner
+    (9,9,9, 0,0,0, 9,9,9): 11, # top and bottom edges
+    (0,0,0, 9,0,0, 0,0,0): 6, # bottom left corner
+    (0,0,0, 0,0,9, 0,0,0): 7, # bottom right corner
+    (9,0,9, 9,0,9, 9,0,9): 8, # left and right edges
+    (0,0,0, 0,0,0, 9,0,9): 3, # bottom left and right corners
+    (9,0,9 ,0,0,0, 0,0,0): 4, # top left and right corners
+    (9,0,9, 0,0,0, 9,0,9): 5, # all corners
+    (9,0,0, 0,0,0, 9,0,0): 0, # top left and bottom left corners
+    (0,0,9, 0,0,0, 0,0,9): 1, # top right and bottom right corners
+    (0,0,0, 0,0,0, 0,0,0): 2, # no edges
+}
+
 
         
-class PrettyLavaRenderer(ObjRenderer):
+class PrettyLavaRenderer(PrettyObjRenderer):
     
-    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
-        super().__init__()
+    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
+        super().__init__(obj=None)
         self.sprite = pyglet.sprite.Sprite(img=lava_animation, x=x, y=y, batch=batch, group=group)
+        self.edges_sprite = pyglet.sprite.Sprite(img=lava_grid[2], x=x, y=y, batch=batch, group=pyglet.graphics.Group(2))
         self.sprite.update(scale=scale_factor)
+        self.edges_sprite.update(scale=scale_factor)
+
+
+        self.lava_grid = lava_grid
+        self.proximity_encoding = None
 
     def set_proximity_encoding(self, encoding: np.ndarray):
-        pass
+        """
+        Set the proximity encoding of the lava object
+        """
+        self.proximity_encoding = encoding
+
+        self.set_type(self.proximity_encoding)
+
+    def set_type(self, proximity_encoding: np.ndarray):
+        """
+        Set the lava type based on the proximity encoding.
+        """
+        # set anything thats not lava to 9 and lava to 0
+        mapped_proximity = np.where(proximity_encoding == 9, 0, 9)
+        prox_flat = tuple(int(val) for val in mapped_proximity.flatten())
+
+        self.prox_flat = prox_flat
+        print(prox_flat)
+        image = None
+        if prox_flat in LAVA_EDGE_TYPES:
+            image = lava_grid[LAVA_EDGE_TYPES[prox_flat]]
+        else:
+            best_match = find_nearest_neighbor(prox_flat, list(LAVA_EDGE_TYPES.keys()))
+            image = lava_grid[LAVA_EDGE_TYPES[best_match]]
+
+        self.edges_sprite.image = image
 
     def update(self, x: int, y: int):
         """
@@ -462,7 +474,7 @@ key = greyscale_keys_grid[4]
 
 class PrettyKeyRenderer(PrettyObjRenderer):
     
-    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
         super().__init__(obj)
         self.sprite = pyglet.sprite.Sprite(img=key, x=x, y=y, batch=batch, group=group)
         self.sprite.update(scale=scale_factor)
@@ -481,7 +493,7 @@ greysacle_ball = pyglet.image.load('sprites/oryx_16bit_ball_greyscale.png')
 
 class PrettyBallRenderer(PrettyObjRenderer):
     
-    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
         super().__init__(obj)
         self.sprite = pyglet.sprite.Sprite(img=greysacle_ball, x=x, y=y, batch=batch, group=group)
         self.sprite.update(scale=scale_factor)
@@ -505,7 +517,7 @@ box_opened = box_grid[1]
 
 class PrettyBoxRenderer(PrettyObjRenderer):
     
-    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+    def __init__(self, obj: WorldObj, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
         super().__init__(obj)
         self.sprite = pyglet.sprite.Sprite(img=box_closed, x=x, y=y, batch=batch, group=group)
         self.sprite.update(scale=scale_factor)
@@ -535,7 +547,7 @@ large_bones_3 = bones_grid[6]
 
 class PrettyBonesRenderer(PrettyObjRenderer):
       
-    def __init__(self, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: int = 1):
+    def __init__(self, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
         super().__init__(None)
         self.sprite = pyglet.sprite.Sprite(img=small_bones_1, x=x, y=y, batch=batch, group=group)
         self.sprite.update(scale=scale_factor)
@@ -564,4 +576,54 @@ class PrettyBonesRenderer(PrettyObjRenderer):
                     self.sprite.image = large_bones_3
         else:
             del self.sprite
+
+floor_shadows_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_floor_shadows.png')
+floor_shadows_grid = ImageGrid(floor_shadows_sprite_sheet, rows=1, columns=8)
+
+shadow = floor_shadows_grid[2]
+
+class PrettyShadowRenderer(PrettyObjRenderer):
+
+    def __init__(self, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
+        super().__init__(obj=None)
+        self.sprite = pyglet.sprite.Sprite(img=shadow, x=x, y=y, batch=batch, group=group)
+        self.sprite.update(scale=scale_factor)
+
+    def update(self, x: int, y: int):
+        """
+        Update state.
+        """
+        # update the sprite location
+        self.sprite.update(x=x, y=y)
+
+web_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_webs.png')
+web_grid = ImageGrid(web_sprite_sheet, rows=1, columns=6)
+
+top_left_web = web_grid[0]
+top_right_web = web_grid[1]
+bottom_right_web = web_grid[2]
+bottom_left_web = web_grid[3]
+
+class PrettyWebRenderer(PrettyObjRenderer):
+
+    def __init__(self, x: int, y: int, batch: pyglet.graphics.Batch, group: pyglet.graphics.Group, scale_factor: float = 1):
+        super().__init__(obj=None)
+        self.sprite = pyglet.sprite.Sprite(img=top_left_web, x=x, y=y, batch=batch, group=group)
+        self.sprite.update(scale=scale_factor)
+
+    def set_type(self, type: int):
+        """
+        Set the proximity encoding of the web object, set the wall type 
+        and set the sprite location.
+        """
+
+        if type == 0:
+            self.sprite.image = top_left_web
+        elif type == 1:
+            self.sprite.image = top_right_web
+        elif type == 2:
+            self.sprite.image = bottom_right_web
+        elif type == 3:
+            self.sprite.image = bottom_left_web
+
         

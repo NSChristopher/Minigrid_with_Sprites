@@ -30,7 +30,7 @@ class MiniGridEnv(gym.Env):
 
     metadata = {
         "render_modes": ["human", "rgb_array"],
-        "render_fps": 10,
+        "render_fps": 20,
     }
 
     def __init__(
@@ -668,7 +668,7 @@ class MiniGridEnv(gym.Env):
         return obs
 
     def get_frame(self):
-        self.rendering_manager.get_frame()
+        return self.rendering_manager.render()
 
     def render(self):
         self.rendering_manager.render()
