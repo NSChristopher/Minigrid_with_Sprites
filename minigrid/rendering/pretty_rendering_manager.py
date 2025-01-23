@@ -75,9 +75,6 @@ class PrettyRenderingManager(BaseRenderingManager):
         # Number of frames per animation cycle
         self.frames_per_action = 5  # Example: walking takes 5 frames
 
-        # Frame duration in terms of simulation steps
-        self.step_duration = 1 / self.render_fps  # Time per frame (0.1 seconds at 10 FPS)
-
         self.window = None
         self.visible_window = (self.env.render_mode == 'human')
         self.scale_factor = 1
@@ -88,6 +85,9 @@ class PrettyRenderingManager(BaseRenderingManager):
         self.batch = None
 
         self.last_step = -2
+
+        # frames from most recent render
+        self.frames = []
 
 
     def render(self):
@@ -128,8 +128,8 @@ class PrettyRenderingManager(BaseRenderingManager):
         new_px_x, new_px_y = self._calculate_opengl_coordinates(self.env.agent_pos[0], 
                                                                 self.env.agent_pos[1], 
                                                                 center=True)
-        frames = []
-        for i in range(self.frames_per_action):
+        self.frames = []
+        for i in range(5):
             
             # Interpolate the agent's position
             t = (i + 1) / self.frames_per_action
@@ -146,24 +146,22 @@ class PrettyRenderingManager(BaseRenderingManager):
             # Draw the batch
             assert self.batch is not None
             self.batch.draw()
+            pyglet.clock.tick()
+            self.window.flip()
 
-            if self.env.render_mode == 'human':
-                # Process events
-                pyglet.clock.tick()
-
+            if self.env.render_mode == 'rgb_array':
+                # capture the frame
+                self.frames.append(self._get_frame())
+            else:
                 # sleep for a bit
                 time.sleep(self.time_per_frame)
 
-                # Flip the window buffers to update the display
-                self.window.flip()
 
-            elif self.env.render_mode == 'rgb_array':
-                pyglet.clock.tick()
-                frame = self._get_frame()
-                frames.append(frame)
-
-        if self.env.render_mode == 'rgb_array':
-            return frames
+    def get_frame(self) -> list:
+        """
+        Return the frames from the most recent render call
+        """
+        return self.frames
 
     def setup_pyglet(self):
         """
@@ -173,7 +171,7 @@ class PrettyRenderingManager(BaseRenderingManager):
         self.window = pyglet.window.Window(
             width=self.pixel_width,
             height=self.pixel_height,
-            visible=self.visible_window
+            visible=self.visible_window,
         )
 
     def setup_new_batches(self):

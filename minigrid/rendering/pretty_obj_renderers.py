@@ -229,19 +229,19 @@ for img in mage_grid:
     img.anchor_y = img.height // 2
 
 # walking sprites
-frame_sequence = [2,3,2,3,1]
+frame_sequence = [1,2,3]
 row=7
 mage_down = [mage_grid[(columns * row) + i] for i in range(columns)]
-walking_down_animation = Animation([AnimationFrame(mage_down[idx], 0.1) for idx in frame_sequence])
+walking_down_animation = Animation([AnimationFrame(mage_down[idx], 0.01) for idx in frame_sequence])
 row=5
 mage_right = [mage_grid[(columns * row) + i] for i in range(columns)]
-walking_right_animation = Animation([AnimationFrame(mage_right[idx], 0.1) for idx in frame_sequence])
+walking_right_animation = Animation([AnimationFrame(mage_right[idx], 0.01) for idx in frame_sequence])
 row=3
 mage_up = [mage_grid[(columns * row) + i] for i in range(columns)]
-walking_up_animation = Animation([AnimationFrame(mage_up[idx], 0.1) for idx in frame_sequence])
+walking_up_animation = Animation([AnimationFrame(mage_up[idx], 0.01) for idx in frame_sequence])
 row=1
 mage_left = [mage_grid[(columns * row) + i] for i in range(columns)]
-walking_left_animation = Animation([AnimationFrame(mage_left[idx], 0.1) for idx in frame_sequence])
+walking_left_animation = Animation([AnimationFrame(mage_left[idx], 0.01) for idx in frame_sequence])
 
 # idel sprites
 standing_right = mage_right[1]
@@ -255,29 +255,29 @@ column = 0
 standing = [mage_grid[(columns * i + 1) + column] for i in range(rows)]
 
 # turning clockwise
-turning_left_to_up_animation = Animation([AnimationFrame(standing[2], 0.1), AnimationFrame(standing[3], None)])
-turning_up_to_right_animation = Animation([AnimationFrame(standing[4], 0.1), AnimationFrame(standing[5], None)])
-turning_right_to_down_animation = Animation([AnimationFrame(standing[6], 0.1), AnimationFrame(standing[7], None)])
-turning_down_to_left_animation = Animation([AnimationFrame(standing[0], 0.1), AnimationFrame(standing[1], None)])
+turning_left_to_up_animation = Animation([AnimationFrame(standing[2], 0.01), AnimationFrame(standing[3], None)])
+turning_up_to_right_animation = Animation([AnimationFrame(standing[4], 0.01), AnimationFrame(standing[5], None)])
+turning_right_to_down_animation = Animation([AnimationFrame(standing[6], 0.01), AnimationFrame(standing[7], None)])
+turning_down_to_left_animation = Animation([AnimationFrame(standing[0], 0.01), AnimationFrame(standing[1], None)])
 # turning counter-clockwise
-turning_left_to_down_animation = Animation([AnimationFrame(standing[0], 0.1), AnimationFrame(standing[7], None)])
-turning_down_to_right_animation = Animation([AnimationFrame(standing[6], 0.1), AnimationFrame(standing[5], None)])
-turning_right_to_up_animation = Animation([AnimationFrame(standing[4], 0.1), AnimationFrame(standing[3], None)])
-turning_up_to_left_animation = Animation([AnimationFrame(standing[2], 0.1), AnimationFrame(standing[1], None)])
+turning_left_to_down_animation = Animation([AnimationFrame(standing[0], 0.01), AnimationFrame(standing[7], None)])
+turning_down_to_right_animation = Animation([AnimationFrame(standing[6], 0.01), AnimationFrame(standing[5], None)])
+turning_right_to_up_animation = Animation([AnimationFrame(standing[4], 0.01), AnimationFrame(standing[3], None)])
+turning_up_to_left_animation = Animation([AnimationFrame(standing[2], 0.01), AnimationFrame(standing[1], None)])
 
 # Toggle animation
 sequence = [15,16,17,15,1]
-toggle_down_animation = Animation([AnimationFrame(mage_down[idx], 0.1) for idx in sequence])
-toggle_right_animation = Animation([AnimationFrame(mage_right[idx], 0.1) for idx in sequence])
-toggle_up_animation = Animation([AnimationFrame(mage_up[idx], 0.1) for idx in sequence])
-toggle_left_animation = Animation([AnimationFrame(mage_left[idx], 0.1) for idx in sequence])
+toggle_down_animation = Animation([AnimationFrame(mage_down[idx], 0.01) for idx in sequence])
+toggle_right_animation = Animation([AnimationFrame(mage_right[idx], 0.01) for idx in sequence])
+toggle_up_animation = Animation([AnimationFrame(mage_up[idx], 0.01) for idx in sequence])
+toggle_left_animation = Animation([AnimationFrame(mage_left[idx], 0.01) for idx in sequence])
 
 # Death animation
 sequence = [19,20,21,22,23]
-right_death_animation = Animation([AnimationFrame(mage_right[idx], 0.1) for idx in sequence])
-down_death_animation = Animation([AnimationFrame(mage_down[idx], 0.1) for idx in sequence])
-left_death_animation = Animation([AnimationFrame(mage_left[idx], 0.1) for idx in sequence])
-up_death_animation = Animation([AnimationFrame(mage_up[idx], 0.1) for idx in sequence])
+right_death_animation = Animation([AnimationFrame(mage_right[idx], 0.01) for idx in sequence])
+down_death_animation = Animation([AnimationFrame(mage_down[idx], 0.01) for idx in sequence])
+left_death_animation = Animation([AnimationFrame(mage_left[idx], 0.01) for idx in sequence])
+up_death_animation = Animation([AnimationFrame(mage_up[idx], 0.01) for idx in sequence])
 
 
 
@@ -382,7 +382,7 @@ columns = 3
 lava_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_lava.png')
 lava_grid = ImageGrid(lava_sprite_sheet, rows=rows, columns=columns)
 
-lava_animation = Animation([AnimationFrame(lava_grid[21], 0.1), AnimationFrame(lava_grid[18], 0.1)])
+lava_animation = Animation([AnimationFrame(lava_grid[21], 0.01), AnimationFrame(lava_grid[18], 0.01)])
 
 LAVA_EDGE_TYPES = {
     (9,9,9, 9,0,0, 9,0,0): 30, # top left corner edge
