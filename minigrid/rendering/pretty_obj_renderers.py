@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from minigrid.core.constants import COLORS
 from minigrid.core.world_object import WorldObj
@@ -28,9 +29,11 @@ class PrettyObjRenderer(ABC):
             self.sprite.delete()
         self.sprite = None
 
+sprites_dir = os.path.join(os.path.dirname(__file__), '../../sprites')
 
-environments_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_walls.png')
-floor_shadows_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_floor_shadows.png')
+
+environments_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_walls.png'))
+floor_shadows_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_floor_shadows.png'))
 environments_grid = ImageGrid(environments_sprite_sheet, rows=23, columns=27, row_padding=0, column_padding=0)
 
 # all sprites from row 19 starting from bottom left corner
@@ -145,10 +148,10 @@ class PrettyFloorRenderer(PrettyObjRenderer):
             self.sprite.image = floor_tiles[type]
 
 
-door_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_doors.png')
+door_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_doors.png'))
 door_grid = ImageGrid(door_sprite_sheet, rows=1, columns=14)
 
-greyscale_door_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_doors_greyscale.png')
+greyscale_door_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_doors_greyscale.png'))
 greyscale_door_grid = ImageGrid(greyscale_door_sprite_sheet, rows=1, columns=14)
 
 unlocked_door = door_grid[0]
@@ -198,7 +201,7 @@ class PrettyDoorRenderer(PrettyObjRenderer):
             else:
                 self.sprite.image = self.locked_door
 
-chests_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_chests.png')
+chests_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_chests.png'))
 chests_grid = ImageGrid(chests_sprite_sheet, rows=1, columns=6)
 
 open_chest_gold = chests_grid[5]
@@ -220,7 +223,7 @@ class PrettyGoalRenderer(PrettyObjRenderer):
 
 rows = 8
 columns = 24
-mage_sprite_sheet = pyglet.image.load('sprites/mage_red.png')
+mage_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'mage_red.png'))
 mage_grid = ImageGrid(mage_sprite_sheet, rows=rows, columns=columns)
 
 # center all sprites
@@ -379,7 +382,7 @@ class PrettyAgentRenderer(PrettyObjRenderer):
 rows = 11
 columns = 3
 
-lava_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_lava.png')
+lava_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_lava.png'))
 lava_grid = ImageGrid(lava_sprite_sheet, rows=rows, columns=columns)
 
 lava_animation = Animation([AnimationFrame(lava_grid[21], 0.01), AnimationFrame(lava_grid[18], 0.01)])
@@ -466,7 +469,7 @@ class PrettyLavaRenderer(PrettyObjRenderer):
         # update the sprite location
         self.sprite.update(x=x, y=y)
 
-greyscale_keys_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_keys_greyscale.png')
+greyscale_keys_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_keys_greyscale.png'))
 greyscale_keys_grid = ImageGrid(greyscale_keys_sprite_sheet, rows=1, columns=6)
 
 key = greyscale_keys_grid[4]
@@ -488,7 +491,7 @@ class PrettyKeyRenderer(PrettyObjRenderer):
         # update the sprite location
         self.sprite.update(x=x, y=y)
 
-greysacle_ball = pyglet.image.load('sprites/oryx_16bit_ball_greyscale.png')
+greysacle_ball = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_ball_greyscale.png'))
 
 class PrettyBallRenderer(PrettyObjRenderer):
     
@@ -507,7 +510,7 @@ class PrettyBallRenderer(PrettyObjRenderer):
         # update the sprite location
         self.sprite.update(x=x, y=y)
 
-box_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_box_greyscale.png')
+box_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_box_greyscale.png'))
 box_grid = ImageGrid(box_sprite_sheet, rows=1, columns=2)
 
 box_closed = box_grid[0]
@@ -532,7 +535,7 @@ class PrettyBoxRenderer(PrettyObjRenderer):
         self.sprite.update(x=x, y=y)
 
 
-bones_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_bones.png')
+bones_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_bones.png'))
 bones_grid = ImageGrid(bones_sprite_sheet, rows=1, columns=7)
 
 small_bones_1 = bones_grid[0]
@@ -576,7 +579,7 @@ class PrettyBonesRenderer(PrettyObjRenderer):
         else:
             del self.sprite
 
-floor_shadows_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_floor_shadows.png')
+floor_shadows_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_floor_shadows.png'))
 floor_shadows_grid = ImageGrid(floor_shadows_sprite_sheet, rows=1, columns=8)
 
 shadow = floor_shadows_grid[2]
@@ -595,7 +598,7 @@ class PrettyShadowRenderer(PrettyObjRenderer):
         # update the sprite location
         self.sprite.update(x=x, y=y)
 
-web_sprite_sheet = pyglet.image.load('sprites/oryx_16bit_webs.png')
+web_sprite_sheet = pyglet.image.load(os.path.join(sprites_dir, 'oryx_16bit_webs.png'))
 web_grid = ImageGrid(web_sprite_sheet, rows=1, columns=6)
 
 top_left_web = web_grid[0]
