@@ -450,7 +450,6 @@ class PrettyLavaRenderer(PrettyObjRenderer):
         prox_flat = tuple(int(val) for val in mapped_proximity.flatten())
 
         self.prox_flat = prox_flat
-        print(prox_flat)
         image = None
         if prox_flat in LAVA_EDGE_TYPES:
             image = lava_grid[LAVA_EDGE_TYPES[prox_flat]]
