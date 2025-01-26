@@ -10,7 +10,6 @@
   <img src="/figures/Unlock.gif" alt="Unlock" height="250">
 </div>
 <div style="display: flex; justify-content: center; gap: 10px;">
-  <img src="/figures/DoorKey.gif" alt="Door Key" height="250">
   <img src="/figures/Unlock_2.gif" alt="Unlock" height="250">
 </div>
 
