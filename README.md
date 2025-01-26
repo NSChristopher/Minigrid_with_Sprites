@@ -5,6 +5,8 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 
+> ![](figures/DoorKey.gif)
+
 > An alternate way to view the Minigrid environment using animations and sprites. Intended to be used as a teaching tool for kids to promote more engagment and interest in Renforcemnt Learning.
 
 ## Table of Contents
