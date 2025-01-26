@@ -6,7 +6,6 @@
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 
 <div style="display: flex; justify-content: center; gap: 10px;">
-  <img src="/figures/DoorKey.gif" alt="Door Key" height="360">
   <img src="/figures/Unlock.gif" alt="Unlock" height="360">
 </div>
 
