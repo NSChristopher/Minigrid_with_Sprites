@@ -11,7 +11,7 @@
 </div>
 <div style="display: flex; justify-content: center; gap: 10px;">
   <img src="/figures/Unlock_1.gif" alt="Unlock" height="250">
-  <img src="/figures/FourRooms.gif" alt="Unlock" height="250">
+  <img src="/figures/Crossing.gif" alt="Unlock" height="250">
 </div>
 
 > An alternate way to view the Minigrid environment using animations and sprites. Intended to be used as a teaching tool for kids to promote more engagment and interest in Renforcemnt Learning.
