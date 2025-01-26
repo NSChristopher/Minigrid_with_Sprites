@@ -5,9 +5,9 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 
-<div>
-  <img src="/figures/DoorKey.gif" height="360"/>
-  <img src="/figures/Unlock.gif" height="360"/>
+<div style="display: flex; justify-content: center; gap: 10px;">
+  <img src="/figures/DoorKey.gif" alt="Door Key" height="360">
+  <img src="/figures/Unlock.gif" alt="Unlock" height="360">
 </div>
 
 > An alternate way to view the Minigrid environment using animations and sprites. Intended to be used as a teaching tool for kids to promote more engagment and interest in Renforcemnt Learning.
