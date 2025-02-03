@@ -43,7 +43,7 @@ Designed to engage students in learning about AI and reinforcement learning spec
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/repository.git
+git clone https://github.com/NSChristopher/Minigrid_with_Sprites.git
 
 # Navigate into the project directory
 cd repository
