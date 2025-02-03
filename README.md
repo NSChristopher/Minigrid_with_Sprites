@@ -41,7 +41,7 @@ Designed to engage students in learning about AI and reinforcement learning spec
 
 ## Getting Started
 
-\`\`\`bash
+```bash
 # Clone the repository
 git clone https://github.com/username/repository.git
 
@@ -50,23 +50,23 @@ cd repository
 
 # Install dependencies
 pip install -r requirements.txt
-\`\`\`
+```
 
 ## Usage
 
 Import the PrettyRenderingManager along with the gym and your desired environment.
 
-\`\`\`python
+```python
 # Example usage
 import gymnasium as gym
 from minigrid.envs import LavaGapEnv
 from minigrid.rendering.pretty_rendering_manager import PrettyRenderingManager
-\`\`\`
+```
 
 Pass the new PrettyRenderingManager into the env.
-\`\`\`python
+```python
 env = LavaGapEnv(render_mode='rgb_array', rendering_manager=PrettyRenderingManager,size=6)
-\`\`\`
+```
 
 ## Contact
 
