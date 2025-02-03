@@ -57,7 +57,6 @@ pip install -r requirements.txt
 Import the PrettyRenderingManager along with the gym and your desired environment.
 
 ```python
-# Example usage
 import gymnasium as gym
 from minigrid.envs import LavaGapEnv
 from minigrid.rendering.pretty_rendering_manager import PrettyRenderingManager
