@@ -32,28 +32,14 @@
 
 ## About the Project
 
-Describe the motivation behind the project. Explain its purpose, how it solves a particular problem, and who the target audience is. Highlight any key technologies or frameworks used.
+Designed to engage students in learning about AI and reinforcement learning specifically, Minigrid with Sprites adds an entirely new rendering manager to Minigrid. This rendering manager utilizes Pyglet along with tons of custom logic to create a beautifully rendered environment for any Minigrid environment.
 
 ## Features
 
-- ✨ **Feature One:** Briefly explain what it does.
-- 🛠️ **Feature Two:** Another significant feature of the project.
-- 🚀 **Feature Three:** Highlight an additional feature or aspect of the project.
+- ✨ **Sprites and Animations:** Using pyglet Minigrid environmnets can be rendered with any sprite.
+- ✨ **Seperate Rendering Logic:** The rendering logic is now seperated and much easier to customize.
 
 ## Getting Started
-
-### Prerequisites
-
-List any software, libraries, or dependencies that need to be installed before running the project.
-
-\`\`\`bash
-# Example:
-pip install numpy pandas
-\`\`\`
-
-### Installation
-
-Provide a step-by-step series of examples and explanations for how to get a development environment running.
 
 \`\`\`bash
 # Clone the repository
@@ -68,30 +54,19 @@ pip install -r requirements.txt
 
 ## Usage
 
-Include screenshots or code examples demonstrating typical use cases of the project. Be clear and concise.
+Import the PrettyRenderingManager along with the gym and your desired environment.
 
 \`\`\`python
 # Example usage
-from project import Feature
-
-feature = Feature()
-feature.run()
+import gymnasium as gym
+from minigrid.envs import LavaGapEnv
+from minigrid.rendering.pretty_rendering_manager import PrettyRenderingManager
 \`\`\`
 
-## Architecture
-
-(Optional) Describe the architecture of the project, such as how different components interact. Diagrams can be helpful here.
-
-## Roadmap
-
-Outline the planned future developments for the project.
-
-- [x] Rendering manager with sprites
-- [ ] Display the prompt message
-
-## License
-
-Distributed under the MIT License. See \`LICENSE\` for more information.
+Pass the new PrettyRenderingManager into the env.
+\`\`\`python
+env = LavaGapEnv(render_mode='rgb_array', rendering_manager=PrettyRenderingManager,size=6)
+\`\`\`
 
 ## Contact
 
@@ -102,3 +77,5 @@ Project Link: [Minigrid_with_Sprites](https://github.com/NSChristopher/Minigrid_
 ## Acknowledgements
 
 - [MiniGrid](https://github.com/Farama-Foundation/Minigrid)
+- [Tiny Dungeon by ORYX DESIGN LAB](https://www.oryxdesignlab.com/products/p/tiny-dungeon-tileset)
+- [PUNY CHARACTERS by Shade](https://opengameart.org/content/puny-characters)
